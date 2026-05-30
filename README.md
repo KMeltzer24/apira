@@ -34,19 +34,28 @@ apira/
 
 ### Option A: Docker Compose (recommended — one command)
 
-Requires [Docker](https://www.docker.com/) with the Compose plugin.
+Requires [Docker Desktop](https://www.docker.com/) (with the Compose plugin) installed and running.
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
-This builds and starts all three services together:
+This builds and starts all three services together in the background:
 
 - Frontend → [http://localhost:3000](http://localhost:3000)
 - User Service → [http://localhost:8001](http://localhost:8001)
 - Portfolio Service → [http://localhost:8002](http://localhost:8002)
 
-Stop everything with `Ctrl+C`, or remove the containers with `docker compose down`.
+Common commands (run from the project root):
+
+```bash
+docker compose ps            # see what's running
+docker compose logs -f       # follow live logs
+docker compose down          # stop and remove the containers
+docker compose up -d         # start again (no --build needed unless code/deps changed)
+```
+
+The `--build` flag is only needed the first time, or after you change code or dependencies.
 
 ### Option B: Run each service manually
 
@@ -146,7 +155,3 @@ The React app (`frontend/src/App.jsx`) is a single component tree with two scree
 ## Deployment (Future Phase)
 
 This project will be deployed to **AWS EC2** in a later phase. Deployment configuration, infrastructure, and CI/CD pipelines are not yet included.
-
-## License
-
-This is a learning/mentorship project. Use it freely for educational purposes.
