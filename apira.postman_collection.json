@@ -1,0 +1,57 @@
+{
+  "info": {
+    "name": "Apira",
+    "description": "Dummy enterprise microservices system. User Service (8001) and Portfolio Service (8002). No database — all values are hardcoded.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "User Service",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"anything\"\n}"
+            },
+            "url": {
+              "raw": "{{userServiceUrl}}/login",
+              "host": ["{{userServiceUrl}}"],
+              "path": ["login"]
+            },
+            "description": "Accepts any credentials and always returns success."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Portfolio Service",
+      "item": [
+        {
+          "name": "Get Portfolio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{portfolioServiceUrl}}/portfolio",
+              "host": ["{{portfolioServiceUrl}}"],
+              "path": ["portfolio"]
+            },
+            "description": "Returns a hardcoded list of stock holdings."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "userServiceUrl", "value": "http://localhost:8001" },
+    { "key": "portfolioServiceUrl", "value": "http://localhost:8002" }
+  ]
+}

@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+.pycache/
 *.py[cod]
 *$py.class
 *.so
@@ -32,3 +33,7 @@ npm-debug.log*
 
 # Local tooling (portable Node used for setup)
 .node/
+
+# Postman app workspace (the exported apira.postman_collection.json is committed instead)
+.postman/
+postman/
