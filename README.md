@@ -185,7 +185,7 @@ The React app (`frontend/src/App.jsx`) is a single component tree with two scree
 
 ## AWS EC2 Deployment
 
-The two backend microservices are deployed on **AWS EC2** and connect to **AWS RDS PostgreSQL**. The React frontend is **not** deployed yet — it still targets `localhost` when run locally.
+The two backend microservices are deployed on **AWS EC2** and connect to **AWS RDS PostgreSQL**. The React frontend is for **local development only** — it is not part of the EC2 deployment. Test deployed APIs with curl, Postman, or Swagger UI.
 
 ### Architecture
 
@@ -268,5 +268,4 @@ ssh -i your-key.pem ec2-user@3.133.124.58 \
 |---|---|---|
 | Needs `.env` with `DATABASE_URL` | Yes | Yes (on EC2 at `~/apira/.env`) |
 | Can reach RDS from laptop | No (unless SSH tunnel) | N/A — EC2 reaches RDS inside VPC |
-| Frontend | `localhost:3000` → `localhost:8001/8002` | Not deployed yet |
-| API testing | localhost or EC2 IP | `http://3.133.124.58:8001` / `:8002` |
+| API testing | `localhost:8001` / `localhost:8002` | `http://3.133.124.58:8001` / `:8002` |
