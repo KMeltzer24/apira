@@ -1,6 +1,6 @@
 # Frontend
 
-React (Vite) web app for the Apira project. It has two screens — a fake login and a portfolio view — that talk to the User Service (`:8001`) and Portfolio Service (`:8002`).
+React (Vite) web app for local development. It has two screens — login and portfolio view — that talk to the User Service (`:8001`) and Portfolio Service (`:8002`) on `localhost`.
 
 The dev server runs on **port 3000** (set in `vite.config.js`).
 
@@ -13,4 +13,4 @@ npm run dev
 
 Then open [http://localhost:3000](http://localhost:3000).
 
-For running the whole stack (frontend + both services) together with Docker, see the [root README](../README.md).
+The frontend is not deployed to EC2. For testing the live APIs, use Postman or curl — see the [root README](../README.md).
