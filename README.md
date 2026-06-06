@@ -19,9 +19,6 @@ apira/
 ├── user-service/                  # FastAPI user management service (+ Dockerfile)
 ├── portfolio-service/             # FastAPI portfolio management service (+ Dockerfile)
 ├── frontend/                      # React (Vite) web application (+ Dockerfile)
-├── db/                            # SQL scripts to create + seed the database (run in pgAdmin)
-│   ├── schema.sql
-│   └── seed.sql
 ├── docker-compose.yml             # Runs all three services together
 ├── .env.example                   # Template for the DATABASE_URL connection string
 ├── apira.postman_collection.json  # Postman collection for the APIs
@@ -37,11 +34,51 @@ apira/
 
 ## Database Setup
 
-The services read from a PostgreSQL database with two tables (`users` and `portfolios`). They do **not** create the tables automatically — you create them once with the provided scripts.
+The services read from a PostgreSQL database with two tables (`users` and `portfolios`). They do **not** create the tables automatically — you create them once in **pgAdmin** (Query Tool).
 
-1. In **pgAdmin**, connect to your database (local or AWS RDS) and open the Query Tool.
-2. Run [db/schema.sql](db/schema.sql) to create the `users` and `portfolios` tables.
-3. Run [db/seed.sql](db/seed.sql) to insert sample users and holdings.
+1. Connect to your database in pgAdmin (see [Database setup (pgAdmin + RDS)](#database-setup-pgadmin--rds) if using AWS RDS via SSH tunnel).
+2. Open **Query Tool** on the `postgres` database and run the **create tables** SQL below.
+3. Run the **seed data** SQL below.
+
+**Create tables:**
+
+```sql
+DROP TABLE IF EXISTS portfolios;
+DROP TABLE IF EXISTS users;
+
+CREATE TABLE users (
+    id       SERIAL PRIMARY KEY,
+    username VARCHAR(50)  UNIQUE NOT NULL,
+    password VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE portfolios (
+    id      SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    ticker  VARCHAR(10)  NOT NULL,
+    company VARCHAR(100) NOT NULL,
+    shares  INTEGER NOT NULL
+);
+```
+
+**Seed data** (passwords are plaintext for demo only):
+
+```sql
+INSERT INTO users (username, password) VALUES
+    ('alice', 'password'),
+    ('bob',   'password');
+
+INSERT INTO portfolios (user_id, ticker, company, shares) VALUES
+    ((SELECT id FROM users WHERE username = 'alice'), 'AAPL',  'Apple Inc.',      150),
+    ((SELECT id FROM users WHERE username = 'alice'), 'MSFT',  'Microsoft Corp.',  80),
+    ((SELECT id FROM users WHERE username = 'alice'), 'GOOGL', 'Alphabet Inc.',    25),
+    ((SELECT id FROM users WHERE username = 'alice'), 'AMZN',  'Amazon.com Inc.',  40),
+    ((SELECT id FROM users WHERE username = 'alice'), 'TSLA',  'Tesla Inc.',       60);
+
+INSERT INTO portfolios (user_id, ticker, company, shares) VALUES
+    ((SELECT id FROM users WHERE username = 'bob'), 'NVDA', 'NVIDIA Corp.', 30),
+    ((SELECT id FROM users WHERE username = 'bob'), 'AMD',  'Advanced Micro Devices Inc.', 100);
+```
 
 Seeded logins: `alice` / `password` and `bob` / `password`.
 
@@ -216,7 +253,7 @@ RDS is not reachable directly from a laptop. Connect pgAdmin through an **SSH tu
 1. **pgAdmin → Register Server**
 2. **Connection tab:** Host = RDS endpoint, Port `5432`, Database `postgres`, User `postgres`, SSL mode = Require
 3. **SSH Tunnel tab:** Tunnel host = EC2 public IP, Port `22`, Username `ec2-user`, Identity file = your `.pem` key
-4. Open **Query Tool** on the `postgres` database and run [db/schema.sql](db/schema.sql) then [db/seed.sql](db/seed.sql)
+4. Follow [Database Setup](#database-setup) steps 2–3 to create and seed the tables in Query Tool
 
 ### EC2 security group inbound rules
 
