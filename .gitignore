@@ -37,3 +37,7 @@ npm-debug.log*
 # Postman app workspace (the exported apira.postman_collection.json is committed instead)
 .postman/
 postman/
+
+# SSH private keys / certs (never commit these)
+*.pem
+*.key

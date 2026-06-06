@@ -19,10 +19,19 @@ function LoginScreen({ onLogin }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       })
-      if (!res.ok) throw new Error(`Login failed (${res.status})`)
+      if (!res.ok) {
+        let message = `Login failed (${res.status})`
+        try {
+          const err = await res.json()
+          if (typeof err.detail === 'string') message = err.detail
+        } catch {
+          // response had no JSON body; keep the default message
+        }
+        throw new Error(message)
+      }
       const data = await res.json()
       if (data.success) {
-        onLogin(data.username)
+        onLogin({ username: data.username, userId: data.user_id })
       } else {
         setError('Login failed')
       }
@@ -65,7 +74,7 @@ function LoginScreen({ onLogin }) {
   )
 }
 
-function PortfolioScreen({ username, onLogout }) {
+function PortfolioScreen({ user, onLogout }) {
   const [holdings, setHoldings] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -74,7 +83,9 @@ function PortfolioScreen({ username, onLogout }) {
     setError('')
     setLoading(true)
     try {
-      const res = await fetch(`${PORTFOLIO_SERVICE_URL}/portfolio`)
+      const res = await fetch(
+        `${PORTFOLIO_SERVICE_URL}/portfolio?user_id=${user.userId}`,
+      )
       if (!res.ok) throw new Error(`Request failed (${res.status})`)
       const data = await res.json()
       setHoldings(data.holdings)
@@ -87,7 +98,7 @@ function PortfolioScreen({ username, onLogout }) {
 
   return (
     <div className="card">
-      <h1>Welcome, {username}</h1>
+      <h1>Welcome, {user.username}</h1>
       <div className="actions">
         <button className="btn primary" onClick={loadPortfolio} disabled={loading}>
           {loading ? 'Loading…' : 'View My Portfolio'}
@@ -114,14 +125,14 @@ function PortfolioScreen({ username, onLogout }) {
 }
 
 export default function App() {
-  const [username, setUsername] = useState(null)
+  const [user, setUser] = useState(null)
 
   return (
     <div className="app">
-      {username ? (
-        <PortfolioScreen username={username} onLogout={() => setUsername(null)} />
+      {user ? (
+        <PortfolioScreen user={user} onLogout={() => setUser(null)} />
       ) : (
-        <LoginScreen onLogin={setUsername} />
+        <LoginScreen onLogin={setUser} />
       )}
     </div>
   )
