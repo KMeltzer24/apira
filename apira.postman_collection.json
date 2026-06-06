@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Apira",
-    "description": "Dummy enterprise microservices system. User Service (8001) and Portfolio Service (8002). No database — all values are hardcoded.",
+    "description": "Enterprise microservices system. User Service (8001) and Portfolio Service (8002). Data stored in PostgreSQL on AWS RDS. Default URLs point at the EC2 deployment; switch collection variables to localhost for local dev.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -17,14 +17,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"anything\"\n}"
+              "raw": "{\n  \"username\": \"alice\",\n  \"password\": \"password\"\n}"
             },
             "url": {
               "raw": "{{userServiceUrl}}/login",
               "host": ["{{userServiceUrl}}"],
               "path": ["login"]
             },
-            "description": "Accepts any credentials and always returns success."
+            "description": "Validates username/password against the users table. Returns user_id on success; 401 on invalid credentials."
           },
           "response": []
         }
@@ -39,11 +39,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{portfolioServiceUrl}}/portfolio",
+              "raw": "{{portfolioServiceUrl}}/portfolio?user_id={{userId}}",
               "host": ["{{portfolioServiceUrl}}"],
-              "path": ["portfolio"]
+              "path": ["portfolio"],
+              "query": [
+                { "key": "user_id", "value": "{{userId}}" }
+              ]
             },
-            "description": "Returns a hardcoded list of stock holdings."
+            "description": "Returns holdings for the given user_id from the portfolios table. Use user_id from the login response (alice=1, bob=2)."
           },
           "response": []
         }
@@ -51,7 +54,8 @@
     }
   ],
   "variable": [
-    { "key": "userServiceUrl", "value": "http://localhost:8001" },
-    { "key": "portfolioServiceUrl", "value": "http://localhost:8002" }
+    { "key": "userServiceUrl", "value": "http://3.133.124.58:8001" },
+    { "key": "portfolioServiceUrl", "value": "http://3.133.124.58:8002" },
+    { "key": "userId", "value": "1" }
   ]
 }
