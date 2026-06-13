@@ -2,12 +2,12 @@
 
 This doc explains how the Apira backends got onto EC2 and how to update them after code changes.
 
-**What runs on EC2:** `user-service` (port 8001) and `portfolio-service` (port 8002) in Docker.
+**What runs on EC2:** `user-service` (8001), `portfolio-service` (8002), and `mcp-server` (8000) in Docker.
 
 **What does not run on EC2:** the frontend ([apira-frontend](https://github.com/KMeltzer24/apira-frontend) runs on your Mac).
 
 ```
-Postman / curl / frontend  →  EC2 (Docker)  →  RDS PostgreSQL
+Postman / curl / frontend / MCP clients  →  EC2 (Docker)  →  RDS PostgreSQL
 ```
 
 ---
@@ -21,7 +21,7 @@ These steps were done when the project was first deployed. You should not need t
 - **EC2** — Amazon Linux, SSH user `ec2-user`
 - **RDS** — PostgreSQL in the same VPC (not public from the internet)
 - **Security groups**
-  - EC2: inbound SSH (22), TCP 8001, TCP 8002 from your laptop IP
+  - EC2: inbound SSH (22), TCP 8000, TCP 8001, TCP 8002 from your laptop IP
   - RDS: inbound PostgreSQL (5432) from the EC2 security group
 
 ### 2. Software on EC2
@@ -49,7 +49,8 @@ From your Mac, in the `apira` repo root:
 **Step 1 — Package the backend files**
 
 ```bash
-tar czf /tmp/apira-deploy.tgz user-service portfolio-service docker-compose.backend.yml
+tar czf /tmp/apira-deploy.tgz \
+  user-service portfolio-service mcp-server docker-compose.backend.yml
 ```
 
 **Step 2 — Copy to EC2**
@@ -65,10 +66,10 @@ ssh -i my-ec2-key.pem ec2-user@<EC2_PUBLIC_IP> \
   "mkdir -p ~/apira && \
    tar xzf /tmp/apira-deploy.tgz -C ~/apira && \
    cd ~/apira && \
-   sudo docker compose -f docker-compose.backend.yml up -d --build user-service portfolio-service"
+   sudo docker compose -f docker-compose.backend.yml up -d --build"
 ```
 
-This builds two Docker images and starts two containers. Docker reads `DATABASE_URL` from `~/apira/.env`.
+This builds three Docker images and starts three containers. Docker reads `DATABASE_URL` from `~/apira/.env`.
 
 ---
 
@@ -78,7 +79,8 @@ Use the **same three steps** whenever you change Python code, `requirements.txt`
 
 ```bash
 # 1. Package
-tar czf /tmp/apira-deploy.tgz user-service portfolio-service docker-compose.backend.yml
+tar czf /tmp/apira-deploy.tgz \
+  user-service portfolio-service mcp-server docker-compose.backend.yml
 
 # 2. Copy
 scp -i my-ec2-key.pem /tmp/apira-deploy.tgz ec2-user@<EC2_PUBLIC_IP>:/tmp/
@@ -87,13 +89,13 @@ scp -i my-ec2-key.pem /tmp/apira-deploy.tgz ec2-user@<EC2_PUBLIC_IP>:/tmp/
 ssh -i my-ec2-key.pem ec2-user@<EC2_PUBLIC_IP> \
   "tar xzf /tmp/apira-deploy.tgz -C ~/apira && \
    cd ~/apira && \
-   sudo docker compose -f docker-compose.backend.yml up -d --build user-service portfolio-service"
+   sudo docker compose -f docker-compose.backend.yml up -d --build"
 ```
 
 | Situation | What to do |
 |-----------|------------|
 | Code or dependency changed | Use `--build` (as above) |
-| Restart only, no code changes | Drop `--build`: `up -d user-service portfolio-service` |
+| Restart only, no code changes | Drop `--build`: `up -d` |
 | Changed RDS password | Edit `~/apira/.env` on EC2 directly (not via tarball) |
 
 The tarball never overwrites `~/apira/.env`.
@@ -102,7 +104,7 @@ The tarball never overwrites `~/apira/.env`.
 
 ## Verify it works
 
-**From your Mac:**
+**APIs from your Mac:**
 
 ```bash
 curl -X POST http://<EC2_PUBLIC_IP>:8001/login \
@@ -114,15 +116,23 @@ curl "http://<EC2_PUBLIC_IP>:8002/portfolio?user_id=1"
 
 Both should return HTTP 200 and JSON.
 
+**MCP endpoint from your Mac:**
+
+```bash
+curl -i http://<EC2_PUBLIC_IP>:8000/mcp
+```
+
+Should connect (not time out). An MCP client can use `http://<EC2_PUBLIC_IP>:8000/mcp` to call the `login` and `get_portfolio` tools.
+
 **On EC2 (SSH in first):**
 
 ```bash
 cd ~/apira
 sudo docker compose -f docker-compose.backend.yml ps
-sudo docker compose -f docker-compose.backend.yml logs --tail=30
+sudo docker compose -f docker-compose.backend.yml logs --tail=30 mcp-server
 ```
 
-You should see both containers **Up**.
+You should see all three containers **Up**.
 
 ---
 
@@ -131,14 +141,15 @@ You should see both containers **Up**.
 | Problem | Likely fix |
 |---------|------------|
 | Timeout from Mac | EC2 stopped, or your public IP changed — update security group rules |
-| Works on EC2, not from Mac | Open inbound ports 8001 and 8002 for your current IP |
+| Works on EC2, not from Mac | Open inbound ports 8000, 8001, and 8002 for your current IP |
 | Container keeps crashing | Check logs; confirm `~/apira/.env` exists and RDS is running |
+| MCP up but tools fail | Confirm user-service and portfolio-service containers are running |
 
 **Restart containers:**
 
 ```bash
 cd ~/apira
-sudo docker compose -f docker-compose.backend.yml up -d user-service portfolio-service
+sudo docker compose -f docker-compose.backend.yml up -d
 ```
 
 **Stop containers:**
@@ -147,4 +158,4 @@ sudo docker compose -f docker-compose.backend.yml up -d user-service portfolio-s
 sudo docker compose -f docker-compose.backend.yml down
 ```
 
-Replace `<EC2_PUBLIC_IP>` and `<RDS_ENDPOINT>` with values from the AWS console.
+Replace `<EC2_PUBLIC_IP>` with your value from the AWS console.

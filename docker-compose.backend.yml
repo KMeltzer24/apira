@@ -15,3 +15,14 @@ services:
       - "8002:8002"
     environment:
       - DATABASE_URL=${DATABASE_URL}
+
+  mcp-server:
+    build: ./mcp-server
+    ports:
+      - "8000:8000"
+    environment:
+      - USER_SERVICE_URL=http://user-service:8001
+      - PORTFOLIO_SERVICE_URL=http://portfolio-service:8002
+    depends_on:
+      - user-service
+      - portfolio-service

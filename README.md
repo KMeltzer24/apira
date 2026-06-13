@@ -2,7 +2,7 @@
 
 A dummy enterprise microservices system built for mentorship/learning purposes.
 
-Two FastAPI backend services on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
+Two FastAPI backend services and an MCP server on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
 
 **Stack:** Python, FastAPI, PostgreSQL (RDS), Postman.
 
@@ -14,8 +14,13 @@ Two FastAPI backend services on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
 |---------|------|-------------|
 | **user-service** | `8001` | `POST /login` — validates credentials against the `users` table |
 | **portfolio-service** | `8002` | `GET /portfolio?user_id=<id>` — returns per-user holdings from the `portfolios` table |
+| **mcp-server** | `8000` | MCP over HTTP at `/mcp` — tools: `login`, `get_portfolio(user_id)` |
 
 Demo logins (seed data): `alice` / `password`, `bob` / `password`.
+
+## AWS security group
+
+The EC2 security group must allow inbound **TCP 8000**, **8001**, and **8002** from your laptop IP (same pattern as SSH). Port 8000 is required for remote MCP clients to reach the MCP server.
 
 ## Project Structure
 
@@ -23,6 +28,7 @@ Demo logins (seed data): `alice` / `password`, `bob` / `password`.
 apira/
 ├── user-service/
 ├── portfolio-service/
+├── mcp-server/
 ├── docker-compose.backend.yml     # EC2 deployment
 ├── docs/deploy-ec2.md
 ├── apira.postman_collection.json
@@ -32,8 +38,19 @@ apira/
 ## Architecture
 
 ```
-Client (Postman, curl) → EC2 (user-service, portfolio-service) → RDS PostgreSQL
+Client (Postman, curl, MCP) → EC2 (user-service, portfolio-service, mcp-server) → RDS PostgreSQL
 ```
+
+## MCP Server
+
+Streamable HTTP endpoint: `http://<EC2_PUBLIC_IP>:8000/mcp`
+
+| Tool | Wraps |
+|------|--------|
+| `login(username, password)` | `POST /login` on user-service |
+| `get_portfolio(user_id)` | `GET /portfolio?user_id=` on portfolio-service |
+
+No authentication on the MCP endpoint (learning project). MCP client configuration is separate from this repo.
 
 ## API Endpoints
 
