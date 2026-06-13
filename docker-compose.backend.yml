@@ -1,3 +1,6 @@
+# Backend services for EC2 deployment only.
+# See docs/deploy-ec2.md
+
 services:
   user-service:
     build: ./user-service
@@ -12,11 +15,3 @@ services:
       - "8002:8002"
     environment:
       - DATABASE_URL=${DATABASE_URL}
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      - user-service
-      - portfolio-service
