@@ -2,9 +2,12 @@
 
 This doc explains how the Apira backends got onto EC2 and how to update them after code changes.
 
-**What runs on EC2:** `user-service` (8001), `portfolio-service` (8002), and `mcp-server` (8000) in Docker.
+**What runs on EC2:** `user-service` (8001) and `portfolio-service` (8002) in Docker.
 
-**What does not run on EC2:** the frontend ([apira-frontend](https://github.com/KMeltzer24/apira-frontend) runs on your Mac).
+**Separate repos (not in this tarball):**
+
+- Frontend — [apira-frontend](https://github.com/KMeltzer24/apira-frontend) runs on your Mac
+- MCP server — [apira-mcp](https://github.com/KMeltzer24/apira-mcp) deploys to EC2 separately (port 8000)
 
 ```
 Postman / curl / frontend / MCP clients  →  EC2 (Docker)  →  RDS PostgreSQL
@@ -30,10 +33,16 @@ Docker and Docker Compose were installed on the instance.
 
 ### 3. App directory on EC2
 
-All backend code lives in:
+Backend code lives in:
 
 ```bash
 ~/apira/
+```
+
+MCP server code lives in:
+
+```bash
+~/apira-mcp/
 ```
 
 ### 4. Database
@@ -50,7 +59,7 @@ From your Mac, in the `apira` repo root:
 
 ```bash
 tar czf /tmp/apira-deploy.tgz \
-  user-service portfolio-service mcp-server docker-compose.backend.yml
+  user-service portfolio-service docker-compose.backend.yml
 ```
 
 **Step 2 — Copy to EC2**
@@ -69,7 +78,11 @@ ssh -i my-ec2-key.pem ec2-user@<EC2_PUBLIC_IP> \
    sudo docker compose -f docker-compose.backend.yml up -d --build"
 ```
 
-This builds three Docker images and starts three containers. Docker reads `DATABASE_URL` from `~/apira/.env`.
+This builds two Docker images and starts two containers. Docker reads `DATABASE_URL` from `~/apira/.env`.
+
+**Step 4 — Deploy MCP server**
+
+Follow the deploy steps in [apira-mcp](https://github.com/KMeltzer24/apira-mcp). The MCP container calls the backend via host ports 8001 and 8002.
 
 ---
 
@@ -80,7 +93,7 @@ Use the **same three steps** whenever you change Python code, `requirements.txt`
 ```bash
 # 1. Package
 tar czf /tmp/apira-deploy.tgz \
-  user-service portfolio-service mcp-server docker-compose.backend.yml
+  user-service portfolio-service docker-compose.backend.yml
 
 # 2. Copy
 scp -i my-ec2-key.pem /tmp/apira-deploy.tgz ec2-user@<EC2_PUBLIC_IP>:/tmp/
@@ -97,6 +110,7 @@ ssh -i my-ec2-key.pem ec2-user@<EC2_PUBLIC_IP> \
 | Code or dependency changed | Use `--build` (as above) |
 | Restart only, no code changes | Drop `--build`: `up -d` |
 | Changed RDS password | Edit `~/apira/.env` on EC2 directly (not via tarball) |
+| MCP server changed | Redeploy from [apira-mcp](https://github.com/KMeltzer24/apira-mcp) |
 
 The tarball never overwrites `~/apira/.env`.
 
@@ -122,17 +136,19 @@ Both should return HTTP 200 and JSON.
 curl -i http://<EC2_PUBLIC_IP>:8000/mcp
 ```
 
-Should connect (not time out). An MCP client can use `http://<EC2_PUBLIC_IP>:8000/mcp` to call the `login` and `get_portfolio` tools.
+Should connect (not time out). Deploy and verify MCP via [apira-mcp](https://github.com/KMeltzer24/apira-mcp).
 
 **On EC2 (SSH in first):**
 
 ```bash
 cd ~/apira
 sudo docker compose -f docker-compose.backend.yml ps
-sudo docker compose -f docker-compose.backend.yml logs --tail=30 mcp-server
+
+cd ~/apira-mcp
+sudo docker compose ps
 ```
 
-You should see all three containers **Up**.
+You should see backend containers **Up** in `~/apira` and the MCP container **Up** in `~/apira-mcp`.
 
 ---
 
@@ -145,14 +161,14 @@ You should see all three containers **Up**.
 | Container keeps crashing | Check logs; confirm `~/apira/.env` exists and RDS is running |
 | MCP up but tools fail | Confirm user-service and portfolio-service containers are running |
 
-**Restart containers:**
+**Restart backend containers:**
 
 ```bash
 cd ~/apira
 sudo docker compose -f docker-compose.backend.yml up -d
 ```
 
-**Stop containers:**
+**Stop backend containers:**
 
 ```bash
 sudo docker compose -f docker-compose.backend.yml down
