@@ -8,6 +8,7 @@ This doc explains how the Apira backends got onto EC2 and how to update them aft
 
 - Frontend — [apira-frontend](https://github.com/KMeltzer24/apira-frontend) runs on your Mac
 - MCP server — [apira-mcp](https://github.com/KMeltzer24/apira-mcp) deploys to EC2 separately (port 8000)
+- Agent — [apira-agent](https://github.com/KMeltzer24/apira-agent) deploys to EC2 separately (port 8100, uses the Gemini API)
 
 ```
 Postman / curl / frontend / MCP clients  →  EC2 (Docker)  →  RDS PostgreSQL
@@ -24,7 +25,7 @@ These steps were done when the project was first deployed. You should not need t
 - **EC2** — Amazon Linux, SSH user `ec2-user`
 - **RDS** — PostgreSQL in the same VPC (not public from the internet)
 - **Security groups**
-  - EC2: inbound SSH (22), TCP 8000, TCP 8001, TCP 8002 from your laptop IP
+  - EC2: inbound SSH (22), TCP 8000, TCP 8001, TCP 8002, TCP 8100 from your laptop IP
   - RDS: inbound PostgreSQL (5432) from the EC2 security group
 
 ### 2. Software on EC2

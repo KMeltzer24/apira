@@ -10,6 +10,8 @@ Two FastAPI backend services on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
 
 **MCP server (separate repo):** [apira-mcp](https://github.com/KMeltzer24/apira-mcp)
 
+**Agent (separate repo):** [apira-agent](https://github.com/KMeltzer24/apira-agent)
+
 ## Services
 
 | Service | Port | Description |
@@ -23,7 +25,7 @@ The MCP server (port `8000`) lives in [apira-mcp](https://github.com/KMeltzer24/
 
 ## AWS security group
 
-The EC2 security group must allow inbound **TCP 8000**, **8001**, and **8002** from your laptop IP (same pattern as SSH). Port 8000 is required for remote MCP clients.
+The EC2 security group must allow inbound **TCP 8000**, **8001**, **8002**, and **8100** from your laptop IP (same pattern as SSH). 8000 is for MCP clients; 8100 is the agent API.
 
 ## Project Structure
 
