@@ -34,6 +34,7 @@ apira/
 ├── user-service/
 ├── portfolio-service/
 ├── docker-compose.backend.yml     # EC2 deployment
+├── docs/architecture.md
 ├── docs/deploy-ec2.md
 ├── apira.postman_collection.json
 └── README.md
@@ -41,9 +42,7 @@ apira/
 
 ## Architecture
 
-```
-Client (Postman, curl, frontend, MCP) → EC2 (user-service, portfolio-service, mcp-server) → RDS PostgreSQL
-```
+See **[docs/architecture.md](docs/architecture.md)** for the full system diagram (frontend, agent, MCP, backend, RDS, Gemini).
 
 ## API Endpoints
 
