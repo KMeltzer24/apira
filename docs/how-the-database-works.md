@@ -180,7 +180,21 @@ user-service or portfolio-service (EC2 Docker, ports 8001 / 8002)
 AWS RDS PostgreSQL (private VPC, port 5432)
 ```
 
-MCP and the agent **never** connect to RDS directly. They call the FastAPI HTTP APIs; only the two backend services open database connections.
+MCP and the agent **never** connect to RDS directly for user/portfolio data — they call the FastAPI HTTP APIs. **Exception (Phase II):** apira-mcp also connects to RDS for the `research_chunks` pgvector table used by `searchVectorDB`. See [apira-mcp: setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/setup-pgvector-rds.md).
+
+---
+
+## pgvector table (Phase II — apira-mcp only)
+
+Stock research embeddings live in the **same RDS database**, but are written/read by **apira-mcp** (not user-service or portfolio-service):
+
+| Table | Used by | Purpose |
+|-------|---------|---------|
+| `users` | user-service | Login |
+| `portfolios` | portfolio-service | Holdings |
+| `research_chunks` | apira-mcp | RAG embeddings (`vector(768)`) |
+
+Setup SQL: [apira-mcp/sql/setup_pgvector.sql](https://github.com/KMeltzer24/apira-mcp/blob/main/sql/setup_pgvector.sql).
 
 ---
 
@@ -191,6 +205,7 @@ MCP and the agent **never** connect to RDS directly. They call the FastAPI HTTP 
 | `DATABASE_URL` | EC2 `~/apira/.env` or shell env | `postgresql+psycopg2://apira:****@mydb.xxxx.rds.amazonaws.com:5432/apira` |
 | Passed to containers | `docker-compose.backend.yml` | `environment: - DATABASE_URL=${DATABASE_URL}` |
 | RDS security group | AWS console | Allow **5432** from EC2 security group |
+| MCP `DATABASE_URL` (Phase II) | EC2 `~/apira-mcp/.env` | Same RDS URL as backend |
 
 ---
 
@@ -200,4 +215,5 @@ MCP and the agent **never** connect to RDS directly. They call the FastAPI HTTP 
 |-----|---------|
 | [deploy-ec2.md](deploy-ec2.md) | RDS setup, seed data, EC2 deploy |
 | [architecture.md](architecture.md) | Full system diagram including RDS |
+| [apira-mcp: setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/setup-pgvector-rds.md) | pgvector setup for Phase II |
 | [SQLAlchemy 2.0 docs](https://docs.sqlalchemy.org/en/20/) | Official ORM / Core reference |

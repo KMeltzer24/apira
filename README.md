@@ -45,7 +45,7 @@ apira/
 
 See **[docs/architecture.md](docs/architecture.md)** for the full system diagram (frontend, agent, MCP, backend, RDS, Gemini).
 
-**Stock Recommender (Phase I):** [apira-mcp/docs/how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/how-stock-recommender-works.md) — `searchLocalFolder` tool and end-to-end flow.
+**Stock Recommender (Phase I & II):** [apira-mcp/docs/how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/how-stock-recommender-works.md) — local folder + pgvector search. **RDS setup:** [setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/setup-pgvector-rds.md).
 
 ## API Endpoints
 
