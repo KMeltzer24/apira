@@ -50,6 +50,8 @@ MCP server code lives in:
 
 Tables (`users`, `portfolios`) and seed data were created in RDS using pgAdmin (via SSH tunnel). The app does not create tables on startup.
 
+Both services connect via **SQLAlchemy 2.x** + **psycopg2** using the `DATABASE_URL` env var. See **[how-the-database-works.md](how-the-database-works.md)** for the full connection and query flow.
+
 ---
 
 ## How the first deploy worked

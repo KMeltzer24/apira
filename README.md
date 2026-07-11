@@ -21,7 +21,7 @@ Two FastAPI backend services on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
 
 Demo logins (seed data): `alice` / `password`, `bob` / `password`.
 
-The MCP server (port `8000`) lives in [apira-mcp](https://github.com/KMeltzer24/apira-mcp) and wraps the two APIs above.
+The MCP server (port `8000`) lives in [apira-mcp](https://github.com/KMeltzer24/apira-mcp). It wraps the two APIs above plus a `searchLocalFolder` tool that reads stock research files on EC2 (Phase I stock recommender).
 
 ## AWS security group
 
@@ -36,6 +36,7 @@ apira/
 ├── docker-compose.backend.yml     # EC2 deployment
 ├── docs/architecture.md
 ├── docs/deploy-ec2.md
+├── docs/how-the-database-works.md
 ├── apira.postman_collection.json
 └── README.md
 ```
@@ -83,6 +84,10 @@ Returns holdings for that user only (`alice` and `bob` have different portfolios
 ## Testing
 
 Import `apira.postman_collection.json` into Postman — service URLs are set as collection variables.
+
+## Database
+
+Both backend services connect to **RDS PostgreSQL** via **SQLAlchemy 2.x** and the **psycopg2** driver — not Microsoft SQL Server. See **[docs/how-the-database-works.md](docs/how-the-database-works.md)** for connection setup, request flow, and which imports are current vs legacy.
 
 ## Deployment
 

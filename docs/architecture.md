@@ -32,4 +32,5 @@ Full-stack overview across all four repos: [apira](https://github.com/KMeltzer24
 | apira-agent | [how-the-agent-works.md](https://github.com/KMeltzer24/apira-agent/blob/main/docs/how-the-agent-works.md) |
 | apira-mcp | [how-mcp-works.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/how-mcp-works.md) |
 | apira (backend) | [deploy-ec2.md](deploy-ec2.md) |
+| Database layer | [how-the-database-works.md](how-the-database-works.md) |
 | Stock Recommender (Phase I) | [apira-mcp: how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/how-stock-recommender-works.md) |
