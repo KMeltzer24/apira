@@ -34,4 +34,5 @@ Full-stack overview across all four repos: [apira](https://github.com/KMeltzer24
 | apira (backend) | [deploy-ec2.md](deploy-ec2.md) |
 | Database layer | [how-the-database-works.md](how-the-database-works.md) |
 | Stock Recommender | [apira-mcp: how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/how-stock-recommender-works.md) |
+| Vector search demo | [apira-mcp: demo-vector-search.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/demo-vector-search.md) |
 | pgvector / RDS setup | [apira-mcp: setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/setup-pgvector-rds.md) |
