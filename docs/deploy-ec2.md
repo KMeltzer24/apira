@@ -7,7 +7,8 @@ This doc explains how the Apira backends got onto EC2 and how to update them aft
 **Separate repos (not in this tarball):**
 
 - Frontend — [apira-frontend](https://github.com/KMeltzer24/apira-frontend) runs on your Mac
-- MCP server — [apira-mcp](https://github.com/KMeltzer24/apira-mcp) deploys to EC2 separately (port 8000)
+- Backend MCP — [apira-mcp](https://github.com/KMeltzer24/apira-mcp) deploys to EC2 separately (port 8000)
+- Research MCP — [apira-rag](https://github.com/KMeltzer24/apira-rag) deploys to EC2 separately (host port 8200)
 - Agent — [apira-agent](https://github.com/KMeltzer24/apira-agent) deploys to EC2 separately (port 8100, uses the Gemini API)
 
 ```
@@ -28,6 +29,8 @@ These steps were done when the project was first deployed. You should not need t
   - EC2: inbound SSH (22), TCP 8000, TCP 8001, TCP 8002, TCP 8100 from your laptop IP
   - RDS: inbound PostgreSQL (5432) from the EC2 security group
 
+`apira-rag` publishes host port 8200 so the agent container can reach it through `host.docker.internal`. No public inbound rule for 8200 is required.
+
 ### 2. Software on EC2
 
 Docker and Docker Compose were installed on the instance.
@@ -44,6 +47,12 @@ MCP server code lives in:
 
 ```bash
 ~/apira-mcp/
+```
+
+Research service code lives in:
+
+```bash
+~/apira-rag/
 ```
 
 ### 4. Database
@@ -87,6 +96,10 @@ This builds two Docker images and starts two containers. Docker reads `DATABASE_
 
 Follow the deploy steps in [apira-mcp](https://github.com/KMeltzer24/apira-mcp). The MCP container calls the backend via host ports 8001 and 8002.
 
+**Step 5 — Deploy research service**
+
+Follow the deploy steps in [apira-rag](https://github.com/KMeltzer24/apira-rag). It uses the existing RDS `research_chunks` table, so splitting the repositories does not require a database migration.
+
 ---
 
 ## How to update after code changes
@@ -114,6 +127,7 @@ ssh -i my-ec2-key.pem ec2-user@<EC2_PUBLIC_IP> \
 | Restart only, no code changes | Drop `--build`: `up -d` |
 | Changed RDS password | Edit `~/apira/.env` on EC2 directly (not via tarball) |
 | MCP server changed | Redeploy from [apira-mcp](https://github.com/KMeltzer24/apira-mcp) |
+| Research pipeline changed | Redeploy from [apira-rag](https://github.com/KMeltzer24/apira-rag) |
 
 The tarball never overwrites `~/apira/.env`.
 
@@ -149,9 +163,12 @@ sudo docker compose -f docker-compose.backend.yml ps
 
 cd ~/apira-mcp
 sudo docker compose ps
+
+cd ~/apira-rag
+sudo docker compose ps
 ```
 
-You should see backend containers **Up** in `~/apira` and the MCP container **Up** in `~/apira-mcp`.
+You should see backend containers and both MCP containers **Up**.
 
 ---
 

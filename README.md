@@ -10,6 +10,8 @@ Two FastAPI backend services on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
 
 **MCP server (separate repo):** [apira-mcp](https://github.com/KMeltzer24/apira-mcp)
 
+**RAG service (separate repo):** [apira-rag](https://github.com/KMeltzer24/apira-rag)
+
 **Agent (separate repo):** [apira-agent](https://github.com/KMeltzer24/apira-agent)
 
 ## Services
@@ -21,11 +23,11 @@ Two FastAPI backend services on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
 
 Demo logins (seed data): `alice` / `password`, `bob` / `password`.
 
-The MCP server (port `8000`) lives in [apira-mcp](https://github.com/KMeltzer24/apira-mcp). It wraps the two APIs above plus a `searchLocalFolder` tool that reads stock research files on EC2 (Phase I stock recommender).
+The backend MCP server (port `8000`) lives in [apira-mcp](https://github.com/KMeltzer24/apira-mcp) and wraps the two APIs above. Research tools, corpus, and pgvector ingestion live in [apira-rag](https://github.com/KMeltzer24/apira-rag) on port `8200`.
 
 ## AWS security group
 
-The EC2 security group must allow inbound **TCP 8000**, **8001**, **8002**, and **8100** from your laptop IP (same pattern as SSH). 8000 is for MCP clients; 8100 is the agent API.
+The EC2 security group must allow inbound **TCP 8000**, **8001**, **8002**, and **8100** from your laptop IP. Port `8200` is used by the co-located agent and does not need public access.
 
 ## Project Structure
 
@@ -45,7 +47,7 @@ apira/
 
 See **[docs/architecture.md](docs/architecture.md)** for the full system diagram (frontend, agent, MCP, backend, RDS, Gemini).
 
-**Stock Recommender (Phase I & II):** [apira-mcp/docs/how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/how-stock-recommender-works.md) — local folder + pgvector search. **RDS setup:** [setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/setup-pgvector-rds.md).
+**Stock Recommender:** [apira-rag/docs/how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) — local folder + pgvector search. **RDS setup:** [setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/setup-pgvector-rds.md).
 
 ## API Endpoints
 
@@ -94,3 +96,5 @@ Both backend services connect to **RDS PostgreSQL** via **SQLAlchemy 2.x** and t
 Backend services are deployed to EC2 with Docker. See **[docs/deploy-ec2.md](docs/deploy-ec2.md)** for the full deploy, update, and verification guide.
 
 MCP server deployment: **[apira-mcp](https://github.com/KMeltzer24/apira-mcp)**.
+
+RAG service deployment: **[apira-rag](https://github.com/KMeltzer24/apira-rag)**.
