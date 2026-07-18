@@ -49,5 +49,4 @@ flowchart LR
 | apira (backend) | [deploy-ec2.md](deploy-ec2.md) |
 | Database layer | [how-the-database-works.md](how-the-database-works.md) |
 | Stock Recommender | [apira-rag: how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) |
-| Vector search demo | [apira-rag: demo-vector-search.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/demo-vector-search.md) |
 | pgvector / RDS setup | [apira-rag: setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/setup-pgvector-rds.md) |
