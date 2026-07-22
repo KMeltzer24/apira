@@ -1,6 +1,6 @@
 # Apira
 
-A dummy enterprise microservices system built for mentorship/learning purposes.
+A dummy enterprise microservices system built for learning purposes.
 
 Two FastAPI backend services on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
 
@@ -41,7 +41,7 @@ apira/
 ├── docs/how-the-database-works.md
 ├── docs/logging.md                # logging contract (schema + redaction)
 ├── docs/how-logging-works.md      # how Phase IV logging works
-├── docs/demo-logging.md           # mentor demo walkthrough
+├── docs/demo-logging.md           # logging demo walkthrough
 ├── apira.postman_collection.json
 └── README.md
 ```

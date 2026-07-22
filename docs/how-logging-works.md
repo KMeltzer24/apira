@@ -4,7 +4,7 @@ This doc explains **structured logging** across Apira: JSON events, `X-Request-I
 correlation, redaction, and how to follow one user action from browser to RDS.
 
 **Contract (schema + rules):** [logging.md](logging.md)  
-**Short mentor demo:** [demo-logging.md](demo-logging.md)
+**Demo:** [demo-logging.md](demo-logging.md)
 
 **Related repos:**
 
@@ -165,6 +165,6 @@ lines. Agent Chat / Recommender use the longer path above.
 ## Further reading
 
 - [logging.md](logging.md) — canonical schema and redaction contract
-- [demo-logging.md](demo-logging.md) — 5-minute mentor walkthrough
+- [demo-logging.md](demo-logging.md) — 5-minute demo walkthrough
 - [deploy-ec2.md](deploy-ec2.md) — “Follow a request through logs”
 - [architecture.md](architecture.md) — system diagram + observability note

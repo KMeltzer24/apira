@@ -51,7 +51,7 @@ agent. Centralized collection, dashboards, traces, alerts, and automated
 remediation are intentionally later phases.
 
 See [how-logging-works.md](how-logging-works.md), the
-[logging contract](logging.md), and the [mentor demo](demo-logging.md).
+[logging contract](logging.md), and the [logging demo](demo-logging.md).
 
 ## Per-repo docs
 

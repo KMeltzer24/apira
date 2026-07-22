@@ -185,7 +185,7 @@ cd ~/apira && sudo docker compose -f docker-compose.backend.yml logs --since=10m
 
 Set `LOG_LEVEL=DEBUG` only while diagnosing a problem, then return it to
 `INFO`. See [how-logging-works.md](how-logging-works.md),
-[logging.md](logging.md), and the mentor steps in
+[logging.md](logging.md), and the demo steps in
 [demo-logging.md](demo-logging.md).
 
 ---

@@ -8,7 +8,7 @@ currently go to the browser console or container stdout; centralized collection,
 metrics, traces, alerting, and automated remediation are later phases.
 
 **How it works (narrative):** [how-logging-works.md](how-logging-works.md)  
-**Mentor demo:** [demo-logging.md](demo-logging.md)
+**Demo:** [demo-logging.md](demo-logging.md)
 
 ## Correlation
 

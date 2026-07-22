@@ -1,6 +1,6 @@
 # How to demo Phase IV — Structured Logging
 
-Short walkthrough for mentors. Shows end-to-end `X-Request-ID` correlation and
+Short walkthrough for demos. Shows end-to-end `X-Request-ID` correlation and
 safe JSON logs without dumping secrets.
 
 **Full write-up:** [how-logging-works.md](how-logging-works.md)  
@@ -40,7 +40,7 @@ cd ~/apira && sudo docker compose -f docker-compose.backend.yml logs --since=15m
 
 ---
 
-## 2. Prove correlation with curl (technical mentor)
+## 2. Prove correlation with curl
 
 From your Mac:
 
@@ -108,7 +108,7 @@ Expect `login_succeeded` + `request_completed` with your UUID.
 
 ---
 
-## Suggested mentor walkthrough (5 min)
+## Suggested demo walkthrough (5 min)
 
 1. Open [how-logging-works.md](how-logging-works.md) — diagram of ID flow.
 2. Live UI: Agent Chat or Portfolio → copy `x-request-id` from Network.
