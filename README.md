@@ -39,6 +39,9 @@ apira/
 ├── docs/architecture.md
 ├── docs/deploy-ec2.md
 ├── docs/how-the-database-works.md
+├── docs/logging.md                # logging contract (schema + redaction)
+├── docs/how-logging-works.md      # how Phase IV logging works
+├── docs/demo-logging.md           # mentor demo walkthrough
 ├── apira.postman_collection.json
 └── README.md
 ```
@@ -46,6 +49,10 @@ apira/
 ## Architecture
 
 See **[docs/architecture.md](docs/architecture.md)** for the full system diagram (frontend, agent, MCP, backend, RDS, Gemini).
+
+**Structured logging:** [docs/how-logging-works.md](docs/how-logging-works.md) —
+how correlation works end to end. **Contract:** [docs/logging.md](docs/logging.md).
+**Demo:** [docs/demo-logging.md](docs/demo-logging.md).
 
 **Stock Recommender:** [apira-rag/docs/how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) — local folder + pgvector search. **RDS setup:** [setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/setup-pgvector-rds.md).
 

@@ -38,6 +38,21 @@ flowchart LR
 
 **Portfolio tab** (dashed arrows) — frontend calls backend APIs directly (`POST /login`, then `GET /portfolio?user_id=`). No agent, MCP, or Gemini involved. All tabs share no session state.
 
+## Observability foundation
+
+Every browser/API request carries an `X-Request-ID`. Services echo and
+propagate that ID while writing structured JSON events to browser console or
+container stdout. This makes one request traceable across the agent, MCP tools,
+backend APIs, Gemini, and RDS without logging credentials, prompts, portfolio
+contents, research text, or embeddings.
+
+This is the logging foundation for the planned production-incident resolution
+agent. Centralized collection, dashboards, traces, alerts, and automated
+remediation are intentionally later phases.
+
+See [how-logging-works.md](how-logging-works.md), the
+[logging contract](logging.md), and the [mentor demo](demo-logging.md).
+
 ## Per-repo docs
 
 | Repo | Doc |
@@ -48,5 +63,8 @@ flowchart LR
 | apira-rag | [README.md](https://github.com/KMeltzer24/apira-rag) |
 | apira (backend) | [deploy-ec2.md](deploy-ec2.md) |
 | Database layer | [how-the-database-works.md](how-the-database-works.md) |
+| How logging works | [how-logging-works.md](how-logging-works.md) |
+| Logging contract | [logging.md](logging.md) |
+| Logging demo | [demo-logging.md](demo-logging.md) |
 | Stock Recommender | [apira-rag: how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) |
 | pgvector / RDS setup | [apira-rag: setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/setup-pgvector-rds.md) |

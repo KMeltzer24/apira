@@ -1,10 +1,16 @@
+import logging
+
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from db import get_db
+from logging_config import RequestLoggingMiddleware, configure_logging
 from models import Portfolio
+
+configure_logging()
+logger = logging.getLogger("apira.portfolio")
 
 app = FastAPI(title="Portfolio Service")
 
@@ -15,6 +21,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestLoggingMiddleware)
 
 
 @app.get("/portfolio")
@@ -27,4 +34,12 @@ def portfolio(user_id: int, db: Session = Depends(get_db)):
         {"ticker": row.ticker, "company": row.company, "shares": row.shares}
         for row in rows
     ]
+    logger.info(
+        "Portfolio fetched",
+        extra={
+            "event": "portfolio_fetched",
+            "user_id": user_id,
+            "holdings_count": len(holdings),
+        },
+    )
     return {"holdings": holdings}

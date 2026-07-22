@@ -170,6 +170,24 @@ sudo docker compose ps
 
 You should see backend containers and both MCP containers **Up**.
 
+### Follow a request through logs
+
+Application events are JSON on container stdout. Start with the
+`X-Request-ID` response header from the browser or API call, then search each
+service's recent logs for that value:
+
+```bash
+cd ~/apira-agent && sudo docker compose logs --since=10m
+cd ~/apira-mcp && sudo docker compose logs --since=10m
+cd ~/apira-rag && sudo docker compose logs --since=10m
+cd ~/apira && sudo docker compose -f docker-compose.backend.yml logs --since=10m
+```
+
+Set `LOG_LEVEL=DEBUG` only while diagnosing a problem, then return it to
+`INFO`. See [how-logging-works.md](how-logging-works.md),
+[logging.md](logging.md), and the mentor steps in
+[demo-logging.md](demo-logging.md).
+
 ---
 
 ## Troubleshooting
