@@ -165,6 +165,6 @@ lines. Agent Chat / Recommender use the longer path above.
 ## Further reading
 
 - [logging.md](logging.md) — canonical schema and redaction contract
-- [demo-logging.md](demo-logging.md) — 5-minute demo walkthrough
+- [demo-logging.md](demo-logging.md) — demo walkthrough
 - [deploy-ec2.md](deploy-ec2.md) — “Follow a request through logs”
 - [architecture.md](architecture.md) — system diagram + observability note
