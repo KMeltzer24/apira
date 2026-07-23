@@ -105,17 +105,3 @@ sudo docker compose -f docker-compose.backend.yml logs --since=5m | grep "$RID"
 ```
 
 Expect `login_succeeded` + `request_completed` with your UUID.
-
----
-
-## Suggested demo walkthrough (5 min)
-
-1. Open [how-logging-works.md](how-logging-works.md) — diagram of ID flow.
-2. Live UI: Agent Chat or Portfolio → copy `x-request-id` from Network.
-3. SSH → `grep` that ID across agent + mcp + backend (step 1 commands).
-4. Call out one redacted tool log (`argument_keys`, no secret values).
-5. Mention: this is the baseline for a future incident-resolution agent;
-   centralized collection comes later ([logging.md](logging.md)).
-
-That covers Phase IV: structured JSON everywhere, correlation IDs end-to-end,
-and safe metadata instead of raw payloads.
