@@ -1,0 +1,71 @@
+// Ship Docker container stdout/stderr to Grafana Cloud Loki.
+// Credentials come from the Alloy container environment.
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_log_stream"]
+    target_label  = "stream"
+  }
+
+  // Keep Apira-related containers; drop Alloy itself to avoid noise loops.
+  rule {
+    source_labels = ["container"]
+    regex         = ".*(alloy|observability-alloy).*"
+    action        = "drop"
+  }
+}
+
+loki.source.docker "containers" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.containers.output
+  labels     = {
+    "job" = "docker",
+  }
+  forward_to = [loki.process.json_labels.receiver]
+}
+
+loki.process "json_labels" {
+  forward_to = [loki.write.grafana_cloud.receiver]
+
+  stage.json {
+    expressions = {
+      level       = "level",
+      service     = "service",
+      environment = "environment",
+      request_id  = "request_id",
+      user_id     = "user_id",
+      event       = "event",
+    }
+  }
+
+  stage.labels {
+    values = {
+      level       = "",
+      service     = "",
+      environment = "",
+    }
+  }
+}
+
+loki.write "grafana_cloud" {
+  endpoint {
+    url = env("GRAFANA_LOKI_URL")
+
+    basic_auth {
+      username = env("GRAFANA_LOKI_USER")
+      password = env("GRAFANA_LOKI_API_KEY")
+    }
+  }
+}

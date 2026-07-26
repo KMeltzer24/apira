@@ -34,12 +34,17 @@ def portfolio(user_id: int, db: Session = Depends(get_db)):
         {"ticker": row.ticker, "company": row.company, "shares": row.shares}
         for row in rows
     ]
+    tickers = [h["ticker"] for h in holdings]
     logger.info(
         "Portfolio fetched",
         extra={
             "event": "portfolio_fetched",
             "user_id": user_id,
             "holdings_count": len(holdings),
+            "tickers": tickers,
+            "holdings_summary": [
+                {"ticker": h["ticker"], "shares": h["shares"]} for h in holdings
+            ],
         },
     )
     return {"holdings": holdings}

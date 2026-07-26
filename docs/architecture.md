@@ -5,6 +5,7 @@ Full-stack overview across five repos: [apira](https://github.com/KMeltzer24/api
 ```mermaid
 flowchart LR
     Frontend["apira-frontend :3000"] --> Agent["apira-agent :8100"]
+    Frontend --> LogService["log-service :8300"]
     Agent --> BackendMCP["apira-mcp :8000"]
     Agent --> RagMCP["apira-rag :8200"]
     BackendMCP --> User["user-service :8001"]
@@ -15,6 +16,8 @@ flowchart LR
     RagMCP --> RDS
     Agent --> Gemini["Gemini API"]
     RagMCP --> Gemini
+    LogService --> Loki["Grafana Cloud Loki"]
+    Alloy["Grafana Alloy"] --> Loki
 ```
 
 ## Hosting
@@ -27,6 +30,9 @@ flowchart LR
 | **apira-rag** | AWS EC2 — port `8200` |
 | **user-service** | AWS EC2 — port `8001` |
 | **portfolio-service** | AWS EC2 — port `8002` |
+| **log-service** | AWS EC2 — port `8300` (frontend → Loki) |
+| **Grafana Alloy** | AWS EC2 — ships Docker logs to Loki |
+| **Grafana Cloud Loki** | Grafana Cloud Free (hosted) |
 | **RDS PostgreSQL** | AWS — private VPC, EC2 only |
 | **Google Gemini** | External API |
 
@@ -42,16 +48,16 @@ flowchart LR
 
 Every browser/API request carries an `X-Request-ID`. Services echo and
 propagate that ID while writing structured JSON events to browser console or
-container stdout. This makes one request traceable across the agent, MCP tools,
-backend APIs, Gemini, and RDS without logging credentials, prompts, portfolio
-contents, research text, or embeddings.
+container stdout. Alloy and `log-service` ship those events to **Grafana Cloud
+Loki** so one request is searchable across the agent, MCP tools, backend APIs,
+Gemini, and RDS without logging credentials, prompts, research text, or
+embeddings.
 
 This is the logging foundation for the planned production-incident resolution
-agent. Centralized collection, dashboards, traces, alerts, and automated
-remediation are intentionally later phases.
+agent. Dashboards, traces, alerts, and automated remediation are later phases.
 
-See [how-logging-works.md](how-logging-works.md), the
-[logging contract](logging.md), and the [logging demo](demo-logging.md).
+See [grafana-cloud.md](grafana-cloud.md), [how-logging-works.md](how-logging-works.md),
+the [logging contract](logging.md), and the [logging demo](demo-logging.md).
 
 ## Per-repo docs
 
@@ -64,6 +70,7 @@ See [how-logging-works.md](how-logging-works.md), the
 | apira (backend) | [deploy-ec2.md](deploy-ec2.md) |
 | Database layer | [how-the-database-works.md](how-the-database-works.md) |
 | How logging works | [how-logging-works.md](how-logging-works.md) |
+| Grafana Cloud logs | [grafana-cloud.md](grafana-cloud.md) |
 | Logging contract | [logging.md](logging.md) |
 | Logging demo | [demo-logging.md](demo-logging.md) |
 | Stock Recommender | [apira-rag: how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) |

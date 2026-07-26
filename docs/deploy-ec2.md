@@ -26,7 +26,8 @@ These steps were done when the project was first deployed. You should not need t
 - **EC2** — Amazon Linux, SSH user `ec2-user`
 - **RDS** — PostgreSQL in the same VPC (not public from the internet)
 - **Security groups**
-  - EC2: inbound SSH (22), TCP 8000, TCP 8001, TCP 8002, TCP 8100 from your laptop IP
+  - EC2: inbound SSH (22), TCP 8000, TCP 8001, TCP 8002, TCP 8100, TCP 8300
+    (log-service) from your laptop IP
   - RDS: inbound PostgreSQL (5432) from the EC2 security group
 
 `apira-rag` publishes host port 8200 so the agent container can reach it through `host.docker.internal`. No public inbound rule for 8200 is required.
@@ -71,7 +72,9 @@ From your Mac, in the `apira` repo root:
 
 ```bash
 tar czf /tmp/apira-deploy.tgz \
-  user-service portfolio-service docker-compose.backend.yml
+  user-service portfolio-service log-service observability \
+  docker-compose.backend.yml docker-compose.observability.yml \
+  .env.observability.example
 ```
 
 **Step 2 — Copy to EC2**
@@ -92,6 +95,19 @@ ssh -i my-ec2-key.pem ec2-user@<EC2_PUBLIC_IP> \
 
 This builds two Docker images and starts two containers. Docker reads `DATABASE_URL` from `~/apira/.env`.
 
+**Step 3b — Observability (Grafana Cloud)**
+
+Create `~/apira/.env.observability` from `.env.observability.example` with your
+Loki URL / user / API key, then:
+
+```bash
+cd ~/apira
+sudo docker compose -f docker-compose.observability.yml \
+  --env-file .env.observability up -d --build
+```
+
+Full details: [grafana-cloud.md](grafana-cloud.md).
+
 **Step 4 — Deploy MCP server**
 
 Follow the deploy steps in [apira-mcp](https://github.com/KMeltzer24/apira-mcp). The MCP container calls the backend via host ports 8001 and 8002.
@@ -109,7 +125,9 @@ Use the **same three steps** whenever you change Python code, `requirements.txt`
 ```bash
 # 1. Package
 tar czf /tmp/apira-deploy.tgz \
-  user-service portfolio-service docker-compose.backend.yml
+  user-service portfolio-service log-service observability \
+  docker-compose.backend.yml docker-compose.observability.yml \
+  .env.observability.example
 
 # 2. Copy
 scp -i my-ec2-key.pem /tmp/apira-deploy.tgz ec2-user@<EC2_PUBLIC_IP>:/tmp/
@@ -118,7 +136,9 @@ scp -i my-ec2-key.pem /tmp/apira-deploy.tgz ec2-user@<EC2_PUBLIC_IP>:/tmp/
 ssh -i my-ec2-key.pem ec2-user@<EC2_PUBLIC_IP> \
   "tar xzf /tmp/apira-deploy.tgz -C ~/apira && \
    cd ~/apira && \
-   sudo docker compose -f docker-compose.backend.yml up -d --build"
+   sudo docker compose -f docker-compose.backend.yml up -d --build && \
+   sudo docker compose -f docker-compose.observability.yml \
+     --env-file .env.observability up -d --build"
 ```
 
 | Situation | What to do |
@@ -126,10 +146,11 @@ ssh -i my-ec2-key.pem ec2-user@<EC2_PUBLIC_IP> \
 | Code or dependency changed | Use `--build` (as above) |
 | Restart only, no code changes | Drop `--build`: `up -d` |
 | Changed RDS password | Edit `~/apira/.env` on EC2 directly (not via tarball) |
+| Changed Grafana credentials | Edit `~/apira/.env.observability` on EC2 (not via tarball) |
 | MCP server changed | Redeploy from [apira-mcp](https://github.com/KMeltzer24/apira-mcp) |
 | Research pipeline changed | Redeploy from [apira-rag](https://github.com/KMeltzer24/apira-rag) |
 
-The tarball never overwrites `~/apira/.env`.
+The tarball never overwrites `~/apira/.env` or `~/apira/.env.observability`.
 
 ---
 
@@ -172,9 +193,9 @@ You should see backend containers and both MCP containers **Up**.
 
 ### Follow a request through logs
 
-Application events are JSON on container stdout. Start with the
-`X-Request-ID` response header from the browser or API call, then search each
-service's recent logs for that value:
+Prefer Grafana Explore (LogQL) once observability is up — see
+[grafana-cloud.md](grafana-cloud.md). Application events are still JSON on
+container stdout. Start with the `X-Request-ID` response header, then search:
 
 ```bash
 cd ~/apira-agent && sudo docker compose logs --since=10m

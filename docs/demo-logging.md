@@ -1,9 +1,11 @@
 # How to demo Phase IV — Structured Logging
 
 Short walkthrough for demos. Shows end-to-end `X-Request-ID` correlation and
-safe JSON logs without dumping secrets.
+safe JSON logs without dumping secrets. Prefer **Grafana Explore** once
+[Grafana Cloud](grafana-cloud.md) is wired.
 
 **Full write-up:** [how-logging-works.md](how-logging-works.md)  
+**Grafana Cloud:** [grafana-cloud.md](grafana-cloud.md)  
 **Contract:** [logging.md](logging.md)
 
 ---
@@ -19,11 +21,19 @@ safe JSON logs without dumping secrets.
 5. In Console, confirm JSON lines like `http_request_started` /
    `http_request_completed` with that same `request_id` (paths and status only —
    no password, no prompt).
+6. In **Grafana → Explore → Loki**, run:
 
-Then on EC2, paste that ID into a grep:
+```logql
+{job=~"docker|apira"} | json | request_id = "<paste-request-id-here>"
+```
+
+You should see frontend (`job="apira"`) plus agent/mcp/rag/backend lines
+(`job="docker"`) for Agent Chat / Recommender. Portfolio-only traffic shows
+frontend + user/portfolio services.
+
+Fallback without Grafana — SSH and grep:
 
 ```bash
-# SSH to EC2 first
 RID='<paste-request-id-here>'
 
 cd ~/apira-agent && sudo docker compose logs --since=15m | grep "$RID"
@@ -31,12 +41,6 @@ cd ~/apira-mcp && sudo docker compose logs --since=15m | grep "$RID"
 cd ~/apira-rag && sudo docker compose logs --since=15m | grep "$RID"
 cd ~/apira && sudo docker compose -f docker-compose.backend.yml logs --since=15m | grep "$RID"
 ```
-
-**Agent Chat / Recommender:** you should see the same ID in agent → mcp
-(and rag if research tools ran) → user-service / portfolio-service.
-
-**Portfolio tab only:** matching lines in user-service and portfolio-service
-(frontend talks to backends directly).
 
 ---
 

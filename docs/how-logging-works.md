@@ -17,16 +17,20 @@ correlation, redaction, and how to follow one user action from browser to RDS.
 | [apira-frontend](https://github.com/KMeltzer24/apira-frontend) | Browser console JSON + `X-Request-ID` on every API call |
 
 This is the observability baseline for the future **production-incident resolution
-agent**. Today logs stay in the browser console and container stdout. CloudWatch,
-OpenTelemetry, dashboards, alerts, and auto-remediation come later.
+agent**. Events still print to the browser console and container stdout, and are
+shipped to **Grafana Cloud Loki** for centralized search. Metrics, traces,
+alerting, and auto-remediation come later.
+
+**Grafana setup:** [grafana-cloud.md](grafana-cloud.md)
 
 ---
 
 ## The big picture
 
 ```text
-Browser (DevTools Console)
+Browser (DevTools Console + batched POST)
   │  apiFetch() creates UUID → X-Request-ID
+  │  VITE_LOG_SERVICE_URL → log-service (:8300) → Loki + local JSONL
   ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ EC2 containers — same request_id in every JSON line         │
@@ -40,11 +44,13 @@ Browser (DevTools Console)
 │       └── apira-rag (:8200)                                 │
 │             ├── stock-research/ (local search)              │
 │             └── research_chunks / Gemini embeddings         │
+│                                                             │
+│  Grafana Alloy tails Docker stdout ──────────► Grafana Cloud│
 └─────────────────────────────────────────────────────────────┘
 ```
 
-One UUID ties the whole path together. You copy it from a response header or a
-log line, then `grep` it in each service.
+One UUID ties the whole path together. Copy it from a response header or a log
+line, then search Grafana Explore (or `grep` container logs) for that value.
 
 ---
 
@@ -95,7 +101,9 @@ ENVIRONMENT=development
 7. **Frontend** logs `http_request_completed` with status and `duration_ms`.
 
 Copy the response `X-Request-ID` and search every container for that value —
-that is the full story of one request.
+that is the full story of one request. For “what happened for Alice over time,”
+grep logs for her `user_id` (and inspect `tickers` / `holdings_summary` on
+portfolio events).
 
 ---
 
@@ -140,17 +148,43 @@ That keeps the trail useful for demos and debugging without leaking secrets.
 
 | Surface | How |
 |---------|-----|
+| Grafana Cloud | Explore → Loki — filter by `request_id`, `user_id`, or `service` ([queries](grafana-cloud.md)) |
 | Browser | DevTools → Console (JSON strings) and Network → response header `x-request-id` |
+| Frontend file | `log-service` volume `/var/log/apira/frontend.jsonl` on EC2 |
 | Agent | `cd ~/apira-agent && sudo docker compose logs -f agent` |
 | Backend MCP | `cd ~/apira-mcp && sudo docker compose logs -f mcp-server` |
 | Research MCP | `cd ~/apira-rag && sudo docker compose logs -f rag-server` |
 | Backend APIs | `cd ~/apira && sudo docker compose -f docker-compose.backend.yml logs -f` |
 
-Filter one request:
+Filter one request in Grafana:
+
+```logql
+{job=~"docker|apira"} | json | request_id = "<request-id>"
+```
+
+Or on the host:
 
 ```bash
 sudo docker compose logs --since=10m | grep '<request-id>'
 ```
+
+---
+
+## Alice lookbacks (user + day)
+
+`request_id` follows **one** action across services.
+
+`user_id` follows **one person** across many actions. When Alice complains about
+“something yesterday,” query Grafana by `user_id` and a time range for that
+day. Prefer paths that know the user (login, portfolio, recommender, agent chat
+after login / with `user_id` on `/chat`).
+
+```logql
+{job=~"docker|apira"} | json | user_id = "1"
+```
+
+Then pick a `request_id` from those lines and search it to reconstruct the full
+hop-by-hop path.
 
 ---
 
@@ -164,6 +198,7 @@ lines. Agent Chat / Recommender use the longer path above.
 
 ## Further reading
 
+- [grafana-cloud.md](grafana-cloud.md) — Alloy + log-service + LogQL
 - [logging.md](logging.md) — canonical schema and redaction contract
 - [demo-logging.md](demo-logging.md) — demo walkthrough
 - [deploy-ec2.md](deploy-ec2.md) — “Follow a request through logs”

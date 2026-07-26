@@ -1,0 +1,48 @@
+# Grafana Cloud log shipping for EC2.
+# Requires .env.observability (see .env.observability.example).
+#
+#   docker compose -f docker-compose.observability.yml --env-file .env.observability up -d --build
+
+services:
+  log-service:
+    build: ./log-service
+    ports:
+      - "8300:8300"
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      SERVICE_NAME: log-service
+      LOG_DIR: /var/log/apira
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-*}
+      GRAFANA_LOKI_URL: ${GRAFANA_LOKI_URL}
+      GRAFANA_LOKI_USER: ${GRAFANA_LOKI_USER}
+      GRAFANA_LOKI_API_KEY: ${GRAFANA_LOKI_API_KEY}
+    volumes:
+      - apira-logs:/var/log/apira
+    mem_limit: 128m
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:v1.8.3
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    environment:
+      GRAFANA_LOKI_URL: ${GRAFANA_LOKI_URL}
+      GRAFANA_LOKI_USER: ${GRAFANA_LOKI_USER}
+      GRAFANA_LOKI_API_KEY: ${GRAFANA_LOKI_API_KEY}
+    volumes:
+      - ./observability/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy-data:/var/lib/alloy/data
+    mem_limit: 192m
+    restart: unless-stopped
+    depends_on:
+      - log-service
+
+volumes:
+  apira-logs:
+  alloy-data:

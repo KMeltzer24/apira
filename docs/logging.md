@@ -3,11 +3,12 @@
 Apira emits structured JSON logs so one user action can be followed across the
 frontend, agent, MCP servers, backend APIs, Gemini, and PostgreSQL.
 
-This is the baseline for the future production-incident resolution agent. Logs
-currently go to the browser console or container stdout; centralized collection,
-metrics, traces, alerting, and automated remediation are later phases.
+This is the baseline for the future production-incident resolution agent. Events
+still print to the browser console / container stdout, and are also shipped to
+**Grafana Cloud (Loki)** for centralized search.
 
 **How it works (narrative):** [how-logging-works.md](how-logging-works.md)  
+**Grafana Cloud setup:** [grafana-cloud.md](grafana-cloud.md)  
 **Demo:** [demo-logging.md](demo-logging.md)
 
 ## Correlation
@@ -32,29 +33,41 @@ Each application log is one JSON object with these fields:
 
 - `timestamp` — UTC ISO-8601 timestamp
 - `level` — `DEBUG`, `INFO`, `WARNING`, or `ERROR`
-- `service` — emitting service name
+- `service` — emitting service / component name
 - `environment` — deployment environment
 - `event` — stable machine-readable event name
 - `message` — short human-readable description
 - `request_id` — correlation ID when a request is active
 
-Events add safe fields such as `method`, `path`, `status_code`, `duration_ms`,
-`tool_name`, `upstream`, `match_count`, `chunk_count`, `error_type`, and
-`error_code`.
+When known, also include:
+
+- `user_id` — numeric user id for Alice-style lookbacks across requests
+- `tickers` / `holdings_summary` — portfolio tickers (and share counts) on
+  portfolio / recommender paths
+
+Events add other safe fields such as `method`, `path`, `status_code`,
+`duration_ms`, `tool_name`, `upstream`, `match_count`, `chunk_count`,
+`error_type`, and `error_code`.
 
 ## Redaction rules
 
 Never log:
 
 - Passwords, API keys, authorization headers, or database credentials
-- Full prompts, agent replies, HTTP request/response bodies, or tool arguments
-- Usernames or complete portfolio data
+- Full prompts, agent replies, HTTP request/response bodies, or tool argument values
 - Research document text, extracted page text, or embedding vectors
 
-Log metadata instead: payload length, argument names, user ID, holdings count,
-filename, page/chunk count, model name, status, and duration. Search query text
-is omitted from request/tool logs; diagnostic RAG events may include only a
-short normalized preview.
+Log metadata instead: payload length, argument names, `user_id`, ticker lists,
+holdings summary (`ticker` + `shares`), filename, page/chunk count, model name,
+status, and duration. Search query text is omitted from request/tool logs;
+diagnostic RAG events may include only a short normalized preview.
+
+Central collection uses **Grafana Cloud Loki**:
+
+- Container stdout → Grafana Alloy on EC2 → Loki
+- Browser events → `log-service` (`:8300`) → local JSONL + Loki
+
+See [grafana-cloud.md](grafana-cloud.md) for credentials, deploy, and LogQL.
 
 ## Configuration
 
@@ -66,17 +79,27 @@ LOG_FORMAT=json
 ENVIRONMENT=development
 ```
 
-`LOG_FORMAT=text` is available for local debugging. Docker keeps JSON logs on
-stdout so they can later be collected by CloudWatch, OpenTelemetry, or another
-observability system without changing application events.
+`LOG_FORMAT=text` is available for local debugging. Docker keeps JSON on
+stdout so Alloy can ship the same events without changing application code.
+
+Frontend (Vite):
+
+```bash
+VITE_LOG_LEVEL=INFO
+VITE_ENVIRONMENT=development
+VITE_LOG_SERVICE_URL=http://<EC2_IP>:8300
+```
 
 ## Viewing logs
+
+Prefer Grafana Explore with LogQL (see [grafana-cloud.md](grafana-cloud.md)).
+
+Fallback on the host:
 
 ```bash
 docker compose logs -f
 docker compose logs --since=10m
 ```
 
-Browser events are visible in DevTools Console. Copy a response's
-`X-Request-ID` and search container logs for the same value to reconstruct the
-request path.
+Browser events still appear in DevTools Console. Copy a response's
+`X-Request-ID` and search Grafana (or container logs) for the same value.
