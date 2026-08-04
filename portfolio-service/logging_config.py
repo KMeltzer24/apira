@@ -170,7 +170,10 @@ class RequestLoggingMiddleware:
             await self.app(scope, receive, send_with_request_id)
         except Exception as exc:
             self.logger.exception(
-                "HTTP request failed",
+                "HTTP %s %s failed (%s)",
+                scope["method"],
+                scope["path"],
+                type(exc).__name__,
                 extra={
                     "event": "request_failed",
                     "method": scope["method"],
@@ -202,7 +205,10 @@ class RequestLoggingMiddleware:
             )
         else:
             self.logger.info(
-                "HTTP request completed",
+                "HTTP %s %s completed (%s)",
+                scope["method"],
+                scope["path"],
+                status_code,
                 extra={
                     "event": "request_completed",
                     "method": scope["method"],

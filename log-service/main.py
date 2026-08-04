@@ -163,7 +163,8 @@ async def ingest_logs(body: IngestRequest) -> dict[str, Any]:
         await push_entries(entries)
     except Exception:
         logger.exception(
-            "Failed to push browser logs to Loki",
+            "Failed to push %s browser log(s) to Loki",
+            len(entries),
             extra={"event": "loki.push.exception", "count": len(entries)},
         )
         # Local file write already succeeded; return 202 so the UI does not retry forever.

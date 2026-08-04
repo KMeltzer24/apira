@@ -57,6 +57,9 @@ Browser (DevTools Console + batched POST)
 One UUID ties the whole path together. Copy it from a response header or a log
 line, then search Grafana Explore (or `grep` container logs) for that value.
 
+Multi-step UI flows (e.g. Recommender login then `/chat`) reuse **one**
+`request_id` across those browser calls so frontend + backends stay aligned.
+
 ---
 
 ## What we built
@@ -82,28 +85,32 @@ ENVIRONMENT=development
 
 ## Step-by-step: one Agent Chat request
 
-1. **Frontend** (`apiFetch`) creates a UUID, sets `X-Request-ID`, logs
-   `http_request_started` in the browser console (path, method, upstream —
-   never the prompt body).
+1. **Frontend** (`apiFetch`) creates a UUID, sets `X-Request-ID`, and on
+   completion logs `http_request_completed` (path, method, upstream, status —
+   never the prompt body). Multi-step UI flows reuse one UUID.
 
 2. **apira-agent** accepts that UUID (or generates one), echoes it on the
-   response, and logs `http.request.started` / `chat.started` with
-   `message_length` only.
+   response, and logs `HTTP POST /chat …` plus `chat.started` with
+   `message_length` only (`/health` stays at DEBUG).
 
 3. **Agent run** logs `agent.run.started`, then each MCP tool as
    `mcp.tool.started` with `tool_name` and `argument_keys` (names only).
 
-4. **apira-mcp** receives the same ID, logs tool start/complete, and forwards
-   the ID to user/portfolio services on upstream HTTP calls.
+4. **apira-mcp** receives the same ID, logs business outcomes
+   (`login completed`, `get_portfolio completed`) and upstream
+   `user-service` / `portfolio-service` calls (same `request_id`). Tool
+   middleware lifecycle is DEBUG to avoid duplicating the agent hop.
 
 5. **user-service / portfolio-service** log business events
    (`login_succeeded`, `portfolio_fetched`) and `request_completed` with
    status and duration — still under the same `request_id`.
 
 6. If the prompt used research tools, **apira-rag** logs search/ingest events
-   with counts and filenames, not document text or vectors.
+   with counts and filenames, not document text or vectors. Embedding
+   success chatter is DEBUG; rate limits stay WARNING.
 
-7. **Frontend** logs `http_request_completed` with status and `duration_ms`.
+7. **Frontend** already logged completion in step 1 for this hop; further
+   UI events (`recommender_login`, `portfolio_loaded`) add business context.
 
 Copy the response `X-Request-ID` and search every container for that value —
 that is the full story of one request. For “what happened for Alice over time,”

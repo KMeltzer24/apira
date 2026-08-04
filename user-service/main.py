@@ -38,13 +38,14 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 
     if user is None or user.password != body.password:
         logger.warning(
-            "Login failed",
+            "Login failed (invalid credentials)",
             extra={"event": "login_failed", "error_code": "invalid_credentials"},
         )
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     logger.info(
-        "Login succeeded",
+        "Login succeeded (user_id=%s)",
+        user.id,
         extra={"event": "login_succeeded", "user_id": user.id},
     )
     return {"success": True, "username": user.username, "user_id": user.id}

@@ -36,7 +36,9 @@ def portfolio(user_id: int, db: Session = Depends(get_db)):
     ]
     tickers = [h["ticker"] for h in holdings]
     logger.info(
-        "Portfolio fetched",
+        "Portfolio fetched (%s holdings for user_id=%s)",
+        len(holdings),
+        user_id,
         extra={
             "event": "portfolio_fetched",
             "user_id": user_id,

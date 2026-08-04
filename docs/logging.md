@@ -44,6 +44,26 @@ Events add other safe fields such as `method`, `path`, `status_code`,
 `duration_ms`, `tool_name`, `upstream`, `match_count`, `chunk_count`,
 `error_type`, and `error_code`.
 
+## Message conventions
+
+`event` is the stable filter key. `message` is what humans skim in Grafana.
+
+| Rule | Example |
+|------|---------|
+| Put the nouns people search for in the message (method+path, tool, filename, upstream) | `HTTP POST /chat completed (200)` |
+| Prefer one INFO lifecycle line per hop at default `LOG_LEVEL` | Tool middleware on MCP/RAG is DEBUG; agent + business events stay INFO |
+| High-volume success chatter is DEBUG | Per-chunk embeddings, `/health`, file-start during ingest |
+| Soft failures that still return HTTP 200 say so | `Chat run failed; returning error reply (…)` |
+| Align wording across browser and backends | Use `HTTP …`, not `API request …` |
+| Keep secrets out of messages | No prompts, passwords, query text, or response bodies |
+
+Volume guidance:
+
+- **INFO** — request/tool/business outcomes you want in a normal demo trail
+- **DEBUG** — started/completed pairs that duplicate a richer sibling event
+- **WARNING** — recoverable issues (4xx upstream, Loki skip, rate limit retry)
+- **ERROR** — failures that need attention (exceptions, exhausted retries)
+
 ## Redaction rules
 
 Never log:

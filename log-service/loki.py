@@ -74,7 +74,8 @@ async def push_entries(entries: list[dict[str, Any]]) -> None:
         )
         if response.status_code >= 300:
             logger.error(
-                "Loki push failed",
+                "Loki push failed (status %s)",
+                response.status_code,
                 extra={
                     "event": "loki.push.failed",
                     "status_code": response.status_code,
