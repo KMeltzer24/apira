@@ -1,10 +1,15 @@
-# How Logging Works (Phase IV)
+# How Logging Works
 
-This doc explains **structured logging** across Apira: JSON events, `X-Request-ID`
-correlation, redaction, and how to follow one user action from browser to RDS.
+Narrative of **structured logging** across Apira: JSON events, `X-Request-ID`
+correlation, redaction, Grafana shipping, and following one user action from
+browser to RDS.
+
+This doc is the **story**; the field-level rules live in [logging.md](logging.md)
+(the contract). Keep them separate so demos and implementers can skim the
+schema without reading the full walkthrough.
 
 **Contract (schema + rules):** [logging.md](logging.md)  
-**Demo:** [demo-logging.md](demo-logging.md)
+**Grafana Cloud setup:** [grafana-cloud.md](grafana-cloud.md)
 
 **Related repos:**
 
@@ -200,6 +205,5 @@ lines. Agent Chat / Recommender use the longer path above.
 
 - [grafana-cloud.md](grafana-cloud.md) — Alloy + log-service + LogQL
 - [logging.md](logging.md) — canonical schema and redaction contract
-- [demo-logging.md](demo-logging.md) — demo walkthrough
 - [deploy-ec2.md](deploy-ec2.md) — “Follow a request through logs”
 - [architecture.md](architecture.md) — system diagram + observability note

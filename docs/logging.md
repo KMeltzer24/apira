@@ -1,15 +1,10 @@
-# Phase IV — Structured Logging
+# Structured Logging — Contract
 
-Apira emits structured JSON logs so one user action can be followed across the
-frontend, agent, MCP servers, backend APIs, Gemini, and PostgreSQL.
-
-This is the baseline for the future production-incident resolution agent. Events
-still print to the browser console / container stdout, and are also shipped to
-**Grafana Cloud (Loki)** for centralized search.
+Schema and redaction rules for Apira application logs. This is the **spec**
+(what every service must emit), not a how-to.
 
 **How it works (narrative):** [how-logging-works.md](how-logging-works.md)  
-**Grafana Cloud setup:** [grafana-cloud.md](grafana-cloud.md)  
-**Demo:** [demo-logging.md](demo-logging.md)
+**Grafana Cloud setup:** [grafana-cloud.md](grafana-cloud.md)
 
 ## Correlation
 

@@ -20,6 +20,8 @@ Two FastAPI backend services on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
 |---------|------|-------------|
 | **user-service** | `8001` | `POST /login` — validates credentials against the `users` table |
 | **portfolio-service** | `8002` | `GET /portfolio?user_id=<id>` — returns per-user holdings from the `portfolios` table |
+| **log-service** | `8300` | Browser log ingest → local JSONL + Grafana Cloud Loki |
+| **Grafana Alloy** | — | Ships EC2 Docker stdout → Loki |
 
 Demo logins (seed data): `alice` / `password`, `bob` / `password`.
 
@@ -27,7 +29,7 @@ The backend MCP server (port `8000`) lives in [apira-mcp](https://github.com/KMe
 
 ## AWS security group
 
-The EC2 security group must allow inbound **TCP 8000**, **8001**, **8002**, and **8100** from your laptop IP. Port `8200` is used by the co-located agent and does not need public access.
+The EC2 security group must allow inbound **TCP 8000**, **8001**, **8002**, **8100**, and **8300** from your laptop IP. Port `8200` is used by the co-located agent and does not need public access.
 
 ## Project Structure
 
@@ -35,24 +37,27 @@ The EC2 security group must allow inbound **TCP 8000**, **8001**, **8002**, and 
 apira/
 ├── user-service/
 ├── portfolio-service/
-├── docker-compose.backend.yml     # EC2 deployment
+├── log-service/
+├── observability/                 # Grafana Alloy config
+├── docker-compose.backend.yml     # EC2 backends
+├── docker-compose.observability.yml
 ├── docs/architecture.md
+├── docs/architecture.png
 ├── docs/deploy-ec2.md
+├── docs/grafana-cloud.md
 ├── docs/how-the-database-works.md
-├── docs/logging.md                # logging contract (schema + redaction)
-├── docs/how-logging-works.md      # how Phase IV logging works
-├── docs/demo-logging.md           # logging demo walkthrough
+├── docs/how-logging-works.md
+├── docs/grafana-cloud.md
+├── docs/logging.md                # logging contract
 ├── apira.postman_collection.json
 └── README.md
 ```
 
 ## Architecture
 
-See **[docs/architecture.md](docs/architecture.md)** for the full system diagram (frontend, agent, MCP, backend, RDS, Gemini).
+See **[docs/architecture.md](docs/architecture.md)** for the full system diagram (frontend, agent, MCP, backend, RDS, Gemini, Grafana).
 
-**Structured logging:** [docs/how-logging-works.md](docs/how-logging-works.md) —
-how correlation works end to end. **Contract:** [docs/logging.md](docs/logging.md).
-**Demo:** [docs/demo-logging.md](docs/demo-logging.md).
+**Logging:** [docs/how-logging-works.md](docs/how-logging-works.md) · [docs/logging.md](docs/logging.md) · [docs/grafana-cloud.md](docs/grafana-cloud.md).
 
 **Stock Recommender:** [apira-rag/docs/how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) — local folder + pgvector search. **RDS setup:** [setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/setup-pgvector-rds.md).
 

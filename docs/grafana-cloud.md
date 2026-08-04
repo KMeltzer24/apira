@@ -146,4 +146,4 @@ rebuild one compose project at a time; leave observability up once built.
 
 - [logging.md](logging.md) — event schema / redaction
 - [how-logging-works.md](how-logging-works.md) — narrative + correlation
-- [demo-logging.md](demo-logging.md) — demo using Grafana Explore
+- [how-logging-works.md](how-logging-works.md) — correlation narrative + Alice lookbacks

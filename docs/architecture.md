@@ -57,7 +57,7 @@ This is the logging foundation for the planned production-incident resolution
 agent. Dashboards, traces, alerts, and automated remediation are later phases.
 
 See [grafana-cloud.md](grafana-cloud.md), [how-logging-works.md](how-logging-works.md),
-the [logging contract](logging.md), and the [logging demo](demo-logging.md).
+the [logging contract](logging.md), and [how logging works](how-logging-works.md).
 
 ## Per-repo docs
 
@@ -72,6 +72,5 @@ the [logging contract](logging.md), and the [logging demo](demo-logging.md).
 | How logging works | [how-logging-works.md](how-logging-works.md) |
 | Grafana Cloud logs | [grafana-cloud.md](grafana-cloud.md) |
 | Logging contract | [logging.md](logging.md) |
-| Logging demo | [demo-logging.md](demo-logging.md) |
 | Stock Recommender | [apira-rag: how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) |
 | pgvector / RDS setup | [apira-rag: setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/setup-pgvector-rds.md) |
