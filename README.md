@@ -43,6 +43,7 @@ apira/
 ├── docker-compose.observability.yml
 ├── docs/architecture.md
 ├── docs/architecture.png
+├── docs/demo.md                   # demo & verification guide
 ├── docs/deploy-ec2.md
 ├── docs/grafana-cloud.md
 ├── docs/how-the-database-works.md
@@ -58,6 +59,8 @@ apira/
 See **[docs/architecture.md](docs/architecture.md)** for the full system diagram (frontend, agent, MCP, backend, RDS, Gemini, Grafana).
 
 **Logging:** [docs/how-logging-works.md](docs/how-logging-works.md) · [docs/logging.md](docs/logging.md) · [docs/grafana-cloud.md](docs/grafana-cloud.md).
+
+**Demo & verification:** [docs/demo.md](docs/demo.md) — how to show vector search, the HNSW index, shared-`request_id` logs, and log-message quality working.
 
 **Stock Recommender:** [apira-rag/docs/how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) — local folder + pgvector search. **RDS setup:** [setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/setup-pgvector-rds.md).
 

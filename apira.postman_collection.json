@@ -54,8 +54,8 @@
     }
   ],
   "variable": [
-    { "key": "userServiceUrl", "value": "http://3.133.124.58:8001" },
-    { "key": "portfolioServiceUrl", "value": "http://3.133.124.58:8002" },
+    { "key": "userServiceUrl", "value": "http://18.188.213.146:8001" },
+    { "key": "portfolioServiceUrl", "value": "http://18.188.213.146:8002" },
     { "key": "userId", "value": "1" }
   ]
 }
