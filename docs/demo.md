@@ -1,51 +1,61 @@
-# Demo & verification guide
+# Demo walkthrough
 
-How to **show** the four deliverables working end to end. Each section has a
-"what to say" summary and copy-paste commands that produce visible proof.
+Four things from this week, with code links and captured output.
 
-Deliverables covered:
+1. Vector-search parameters (similarity, limit, prefer-newer)
+2. HNSW vector index in pgvector
+3. One `request_id` across Grafana / all services
+4. Clear, consistent log messages
 
-1. Explain the vector-search parameters (e.g. similarity)
-2. Implement + prove the vector index (HNSW) in pgvector
-3. Grafana logs are complete and share one `request_id`
-4. All log messages make sense
+**Host:** EC2 `18.188.213.146`  
+(user `8001`, portfolio `8002`, agent `8100`, mcp `8000`, rag `8200`, log-service `8300`)
 
-**Live host:** EC2 `18.188.213.146` (ports: user `8001`, portfolio `8002`,
-agent `8100`, mcp `8000`, rag `8200`, log-service `8300`).
-SSH: `ssh -i ~/development/apira/my-ec2-key.pem ec2-user@18.188.213.146`.
+Background docs:
 
-Reference docs:
-
-- Vector params: [apira-rag/docs/vector-search-params.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/vector-search-params.md)
-- pgvector/RDS + HNSW: [apira-rag/docs/setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/setup-pgvector-rds.md)
-- Logging story: [how-logging-works.md](how-logging-works.md) · contract: [logging.md](logging.md)
-- Grafana: [grafana-cloud.md](grafana-cloud.md)
+- [vector-search-params.md](../../apira-rag/docs/vector-search-params.md)
+- [setup-pgvector-rds.md](../../apira-rag/docs/setup-pgvector-rds.md)
+- [how-logging-works.md](how-logging-works.md) · [logging.md](logging.md)
+- [grafana-cloud.md](grafana-cloud.md)
 
 ---
 
-## 1. Vector-search parameters (similarity)
+## 1. Vector-search parameters
 
-**Say:** search embeds the query with Gemini, orders chunks by **cosine
-distance** (`embedding <=> query_vector`), and returns
-`similarity = 1 - distance`. `limit` caps returned matches; a larger candidate
-pool (`limit * 4`) feeds prefer-newer so newer same-ticker docs win ties.
+Chunks and the query are each turned into an **embedding** (768 numbers that
+capture meaning). Search finds chunks whose vectors point in nearly the same
+direction as the query.
 
-Full reference: [vector-search-params.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/vector-search-params.md).
+**Cosine distance** (`<=>` in pgvector) is the angle between those two vectors:
+near `0` = almost the same meaning; larger = less related. We show the inverse:
 
-**Show — run a live search and read the scores:**
-
-```bash
-ssh -i ~/development/apira/my-ec2-key.pem ec2-user@18.188.213.146
-sudo docker exec apira-rag-rag-server-1 python -c "
-import json
-from rag.search import search_vector_db
-res = search_vector_db('AAPL fiscal 2026 second quarter earnings', 3)
-for m in res['matches']:
-    print(round(m['similarity'], 4), m['ticker'], m['document_date'], m['filename'])
-"
+```text
+similarity = 1 - distance
 ```
 
-Expected shape (real output):
+Closer to `1.0` = tight match; ~`0.5`–`0.7` = related; near `0` = weak.
+Compare scores only within one query.
+
+| Knob | Role |
+|------|------|
+| `query` | Text to embed and search |
+| `limit` (default 5) | Matches returned after ranking |
+| Candidate pool (`limit × 4`) | Extra neighbors so prefer-newer can drop older docs without emptying results |
+| Prefer-newer | Same ticker → keep newest `document_date` |
+
+Flow: embed → cosine nearest neighbors → prefer-newer → return up to `limit`.
+
+### Code
+
+| Piece | Where |
+|-------|--------|
+| Search + candidate pool | [rag/search.py](../../apira-rag/rag/search.py) (lines 13–24) |
+| Cosine → `similarity` | [rag/search.py](../../apira-rag/rag/search.py) (lines 36–52) |
+| Prefer-newer | [rag/ranking.py](../../apira-rag/rag/ranking.py) (lines 6–40) |
+| Full write-up | [vector-search-params.md](../../apira-rag/docs/vector-search-params.md) |
+
+### Captured output
+
+Query: `AAPL fiscal 2026 second quarter earnings`, `limit=3`
 
 ```text
 0.7925 AAPL 2026-06-30 aapl-fy2026-q2-earnings.from-pdf.txt
@@ -53,143 +63,133 @@ Expected shape (real output):
 0.7255 AAPL 2026-06-30 aapl-fy2026-q2-earnings.from-pdf.txt
 ```
 
-**Point out:**
+```text
+pgvector search completed (3 matches from 12 candidates)
+```
 
-- Scores descend (`0.79 > 0.74 > 0.73`) — closer to `1.0` = tighter match.
-- The `rag.db_search.completed` log line shows `match_count` and
-  `candidate_count` (e.g. `3 matches from 12 candidates`).
-- Prefer-newer: query a ticker that has both an old and a new doc and confirm
-  the newer `document_date` ranks first.
+(`3` returned; `12` = `3 × 4` candidates.)
 
 ---
 
-## 2. Vector index (HNSW)
+## 2. HNSW vector index
 
-**Say:** the `embedding vector(768)` column has an HNSW ANN index using
-`vector_cosine_ops` (matches the `<=>` operator), `m = 16`,
-`ef_construction = 64`. It is applied idempotently by `rag/schema.py` and lives
-as `sql/migrate_research_chunks_hnsw.sql`. No re-embedding needed.
+The `embedding vector(768)` column has an HNSW approximate-nearest-neighbor
+index:
 
-**Show — the index exists:**
+- Operator class: `vector_cosine_ops` (matches the `<=>` cosine operator)
+- `m = 16` — graph connectivity
+- `ef_construction = 64` — build quality
 
-```bash
-sudo docker exec apira-rag-rag-server-1 python -c "
-from rag.db import get_connection
-with get_connection() as c, c.cursor() as cur:
-    cur.execute(\"SELECT indexname, indexdef FROM pg_indexes WHERE indexname='research_chunks_embedding_hnsw_idx'\")
-    print(cur.fetchall())
-    cur.execute(\"SELECT pg_size_pretty(pg_relation_size('research_chunks_embedding_hnsw_idx'))\")
-    print('size', cur.fetchone())
-    cur.execute('SELECT count(*) FROM research_chunks')
-    print('chunks', cur.fetchone())
-"
+No re-embedding required to add it.
+
+### Code
+
+| Piece | Where |
+|-------|--------|
+| Idempotent `CREATE INDEX` in schema ensure | [rag/schema.py](../../apira-rag/rag/schema.py) (lines 32–40) |
+| SQL migration (same DDL) | [sql/migrate_research_chunks_hnsw.sql](../../apira-rag/sql/migrate_research_chunks_hnsw.sql) |
+| Unit test for the DDL | [tests/test_schema.py](../../apira-rag/tests/test_schema.py) |
+| Docs (opclass, planner note) | [setup-pgvector-rds.md](../../apira-rag/docs/setup-pgvector-rds.md) · [vector-search-params.md](../../apira-rag/docs/vector-search-params.md) |
+
+### Captured output — index exists
+
+```text
+INDEX: research_chunks_embedding_hnsw_idx
+CREATE INDEX ... USING hnsw (embedding vector_cosine_ops)
+  WITH (m='16', ef_construction='64')
+size: 1432 kB
+chunks: 358
 ```
 
-Expected: one row, `USING hnsw (embedding vector_cosine_ops) WITH (m='16', ef_construction='64')`, size ~1.4 MB, 358 chunks.
+### Captured output — planner can use it
 
-**Show — the planner can use it:**
+At ~358 chunks Postgres often prefers a **sequential scan** because it is
+cheaper at this size — that is correct, not a failure. With `enable_seqscan =
+off`, the plan uses the index:
 
-```bash
-sudo docker exec apira-rag-rag-server-1 python -c "
-from rag.db import get_connection
-with get_connection() as c, c.cursor() as cur:
-    cur.execute('SET enable_seqscan = off')
-    cur.execute('EXPLAIN SELECT id FROM research_chunks ORDER BY embedding <=> (SELECT embedding FROM research_chunks LIMIT 1) LIMIT 5')
-    print('\n'.join(r[0] for r in cur.fetchall()))
-"
+```text
+Index Scan using research_chunks_embedding_hnsw_idx on research_chunks
+  Order By: (embedding <=> ...)
 ```
 
-Expected: `Index Scan using research_chunks_embedding_hnsw_idx`.
-
-> **Important caveat to state up front:** with only ~358 chunks the planner
-> *normally* picks a **sequential scan** because it is cheaper at this size —
-> that is correct behaviour, not a bug. `SET enable_seqscan = off` proves the
-> index is valid and usable; it becomes the default plan as the corpus grows.
+As the corpus grows, that plan becomes the default without forcing.
 
 ---
 
-## 3. Grafana logs complete + one `request_id`
+## 3. One `request_id` end to end
 
-**Say:** every service emits JSON logs with a shared `request_id`. The frontend
-mints one UUID per user action (`X-Request-ID`) and reuses it across multi-step
-flows (login + `/chat`), so one action is traceable browser → agent → mcp →
-backends/rag.
+Every service emits structured JSON logs. The frontend mints one UUID per user
+action (`X-Request-ID`) and reuses it for multi-step flows (Recommender login +
+`/chat`), so one action is traceable browser → agent → mcp → backends → rag.
 
-**Show (browser path):**
+Earlier bug: login and chat each minted a fresh UUID. Fixed — one UUID covers
+the whole recommender action.
 
-1. Open the frontend, DevTools → Network, run **Recommender** (login + chat).
-2. On the `/chat` request, copy the response header `x-request-id`.
-3. In Grafana Explore (Loki), filter by it:
+### Code
+
+| Piece | Where |
+|-------|--------|
+| One UUID for login + chat (Recommender) | [App.jsx](../../apira-frontend/src/App.jsx) (lines 191–226) |
+| `apiFetch` accepts / sends `X-Request-ID` | [api.js](../../apira-frontend/src/lib/api.js) (lines 20–34) |
+| Agent accepts ID, sets context, echoes header | [server.py](../../apira-agent/server.py) (lines 59–89) |
+| Agent forwards ID to both MCP servers | [agent.py](../../apira-agent/agent.py) (lines 73–82) |
+| Correlation rules | [logging.md](logging.md) · [how-logging-works.md](how-logging-works.md) |
+
+### In Grafana / the UI
+
+1. Open the frontend, DevTools → Network.
+2. Run **Recommender** (login + chat).
+3. `/login` and `/chat` response headers both show the **same** `x-request-id`.
+4. Grafana Explore (Loki):
 
 ```logql
 {job=~"docker|apira"} | json | request_id = "<request-id>"
 ```
 
-You should see lines from `apira-frontend`, `apira-agent`, `apira-mcp`,
-`user-service`, `portfolio-service`, and (if research ran) `apira-rag` — all
-with the **same** `request_id`.
+### Captured trail (same id across hops)
 
-**Show (host path, no Grafana):**
+Shared id from a live check: `d7f74f07-db35-4a4d-852b-705ac89dbde3`
 
-```bash
-cd ~/apira && sudo docker compose -f docker-compose.backend.yml logs --since=10m | grep '<request-id>'
+```text
+user-service     | login_succeeded          | Login succeeded (user_id=1)
+user-service     | request_completed        | HTTP POST /login completed (200)
+apira-agent      | http.request.started     | HTTP POST /chat started
+apira-agent      | mcp.tool.completed       | MCP tool login completed via apira
+apira-agent      | mcp.tool.completed       | MCP tool get_portfolio completed via apira
+apira-mcp        | upstream.request.completed | Upstream user-service POST /login completed (200)
+apira-mcp        | mcp.portfolio.completed  | get_portfolio completed (5 holdings)
+portfolio-service| portfolio_fetched        | Portfolio fetched (5 holdings for user_id=1)
 ```
 
-**Point out:** the frontend now generates one UUID for the whole recommender
-action instead of a fresh one per call, so the IDs line up across hops (this was
-the earlier mismatch we fixed).
+(RAG is quiet on that prompt because it did not call research tools.)
 
 ---
 
-## 4. Log messages make sense
+## 4. Log messages
 
-**Say:** we did a service-by-service audit. `event` is the stable filter key;
-`message` is human-readable and carries the nouns people search for
-(method+path, tool, filename, upstream, counts). One INFO lifecycle line per hop
-at default `LOG_LEVEL`; noisy chatter demoted to DEBUG.
+We audited every service. `event` is the stable filter key; `message` is what
+you skim in Grafana and includes the nouns you search for (method+path, tool,
+filename, upstream, counts). At default `LOG_LEVEL=INFO` there is roughly one
+lifecycle line per hop. High-volume success chatter (per-chunk embeddings,
+`/health`, MCP tool middleware) is DEBUG. Third-party noise (httpx, google.genai,
+MCP session lines) is quieted to WARNING.
 
-Conventions live in [logging.md](logging.md#message-conventions).
+### Code / docs
 
-**Show — tail one service and read the messages:**
+| Piece | Where |
+|-------|--------|
+| Message conventions (contract) | [logging.md](logging.md) (§ Message conventions) |
+| End-to-end logging story | [how-logging-works.md](how-logging-works.md) |
+| Frontend HTTP completion wording | [api.js](../../apira-frontend/src/lib/api.js) (lines 44–48) |
+| RAG search completion message | [rag/search.py](../../apira-rag/rag/search.py) (lines 66–78) |
 
-```bash
-cd ~/apira-rag && sudo docker compose logs --tail=20 rag-server
+### Example messages
+
+```text
+pgvector search completed (3 matches from 12 candidates)
+HTTP POST /chat completed (200)
+Login succeeded (user_id=1)
+Login failed (invalid credentials)
+Portfolio fetched (5 holdings for user_id=1)
+MCP tool login completed via apira
 ```
-
-Look for clear lines like:
-
-- `pgvector search completed (3 matches from 12 candidates)`
-- `HTTP POST /chat completed (200)` (agent)
-- `Login succeeded (user_id=1)` / `Login failed (invalid credentials)`
-- `Portfolio fetched (5 holdings for user_id=1)`
-- `MCP tool login completed via apira`
-
-**Point out what got quieter:** per-chunk embedding logs, `/health`, and MCP
-tool middleware lifecycle are now DEBUG; third-party library chatter (httpx,
-google.genai, MCP session/protocol lines) is silenced to WARNING.
-
----
-
-## One-shot smoke check
-
-Confirm every container is up and serving:
-
-```bash
-ssh -i ~/development/apira/my-ec2-key.pem ec2-user@18.188.213.146 \
-  'sudo docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
-```
-
-Expect `alloy`, `log-service`, `user-service`, `portfolio-service`,
-`rag-server`, `mcp-server`, `agent` all `Up`.
-
----
-
-## Notes / known limits
-
-- **Memory:** the instance is 916 MB with no swap. Avoid on-box
-  `docker compose up --build` (it OOM-thrashes). Ship images or `docker cp`
-  changed files, or add a 2 GB swap file first.
-- **HNSW at this size** may not change latency yet; it is the correct durable
-  choice and costs ~1.4 MB on RDS.
-- No similarity floor today — weak matches can still return if nothing better
-  is in the candidate pool.
