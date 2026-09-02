@@ -1,0 +1,96 @@
+# Local Mac stack: Postgres + backends + browser log ingest + Alloy → Grafana Cloud Loki.
+# See docs/run-locally.md
+#
+#   cp .env.observability.example .env.observability   # add Grafana Cloud Loki creds
+#   docker compose -f docker-compose.local.yml --env-file .env.observability up -d --build
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: apira
+      POSTGRES_PASSWORD: apira
+      POSTGRES_DB: apira
+    volumes:
+      - apira-pg-data:/var/lib/postgresql/data
+      - ./sql/local-seed.sql:/docker-entrypoint-initdb.d/01-seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apira -d apira"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://apira:apira@postgres:5432/apira
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      SERVICE_NAME: user-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  portfolio-service:
+    build: ./portfolio-service
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://apira:apira@postgres:5432/apira
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      SERVICE_NAME: portfolio-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  log-service:
+    build: ./log-service
+    ports:
+      - "8300:8300"
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      SERVICE_NAME: log-service
+      LOG_DIR: /var/log/apira
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-*}
+      GRAFANA_LOKI_URL: ${GRAFANA_LOKI_URL:-}
+      GRAFANA_LOKI_USER: ${GRAFANA_LOKI_USER:-}
+      GRAFANA_LOKI_API_KEY: ${GRAFANA_LOKI_API_KEY:-}
+    volumes:
+      - apira-logs:/var/log/apira
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:v1.8.3
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    environment:
+      GRAFANA_LOKI_URL: ${GRAFANA_LOKI_URL:-}
+      GRAFANA_LOKI_USER: ${GRAFANA_LOKI_USER:-}
+      GRAFANA_LOKI_API_KEY: ${GRAFANA_LOKI_API_KEY:-}
+    volumes:
+      - ./observability/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy-data:/var/lib/alloy/data
+    depends_on:
+      - log-service
+    restart: unless-stopped
+
+volumes:
+  apira-pg-data:
+  apira-logs:
+  alloy-data:

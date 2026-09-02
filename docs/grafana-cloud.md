@@ -18,7 +18,7 @@ log-service (:8300) ──► local file /var/log/apira/frontend.jsonl
   │
   └──────────────────► Grafana Cloud Loki
 
-Docker containers on EC2
+Docker containers (EC2 or local Compose)
   │  stdout JSON (user, portfolio, mcp, rag, agent, log-service)
   ▼
 Grafana Alloy ──────────────────► Grafana Cloud Loki
@@ -26,7 +26,7 @@ Grafana Alloy ──────────────────► Grafana 
 You ──► Grafana Explore (LogQL) by request_id / user_id / service
 ```
 
-Credentials stay on EC2. The browser never receives the Loki API key.
+Credentials stay in `.env.observability` (EC2 or your Mac). The browser never receives the Loki API key.
 
 | Piece | Role |
 |-------|------|
@@ -46,8 +46,13 @@ Alloy config: [`observability/config.alloy`](../observability/config.alloy)
    - **User** (numeric instance id)
    - Create a **Cloud Access Policy** token with `logs:write` (and usually
      `logs:read` for Explore in the same stack)
-4. On EC2, create `~/apira/.env.observability` from
-   [`.env.observability.example`](../.env.observability.example).
+4. Create `.env.observability` from
+   [`.env.observability.example`](../.env.observability.example)
+   (on EC2 at `~/apira/`, or in this repo on your Mac).
+
+## Local Mac
+
+See **[run-locally.md](run-locally.md)**. Same Loki credentials, `docker-compose.local.yml`.
 
 ## Deploy on EC2
 

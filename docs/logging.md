@@ -42,7 +42,8 @@ When known, also include:
 
 Events add other safe fields such as `method`, `path`, `status_code`,
 `duration_ms`, `tool_name`, `upstream`, `match_count`, `chunk_count`,
-`error_type`, and `error_code`.
+`error_type`, `error_code`, `agent_name` (`supervisor`, `portfolio`, or
+`research` on apira-agent), and `next_node` (supervisor routing).
 
 ## Message conventions
 

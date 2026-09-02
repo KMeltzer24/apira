@@ -1,0 +1,121 @@
+# Run Apira locally (no AWS)
+
+EC2 and RDS are optional. This is the path for promptfoo and mentor demos on your Mac.
+
+Grafana Cloud Loki is still used (free tier). It is not AWS. Copy Loki credentials into `.env.observability` the same way as on EC2.
+
+## What this repo starts
+
+From the **apira** repo root:
+
+```bash
+cp .env.observability.example .env.observability
+# set GRAFANA_LOKI_URL, GRAFANA_LOKI_USER, GRAFANA_LOKI_API_KEY
+# (Grafana Cloud → Loki → Send logs). Leave them blank to skip cloud push;
+# log-service still accepts browser logs on :8300.
+
+docker compose -f docker-compose.local.yml --env-file .env.observability up -d --build
+```
+
+| Container | Port | Role |
+|-----------|------|------|
+| postgres | `5432` | `users` / `portfolios` (seeded alice & bob) |
+| user-service | `8001` | `POST /login` |
+| portfolio-service | `8002` | `GET /portfolio?user_id=` |
+| log-service | `8300` | Browser logs → file + Grafana Cloud Loki |
+| Grafana Alloy | — | Docker stdout → Loki |
+
+Demo logins: `alice` / `password`, `bob` / `password`.
+
+Seed SQL runs **only on first Postgres volume create**. To re-seed: `docker compose -f docker-compose.local.yml down -v` then `up` again.
+
+Check:
+
+```bash
+curl -s -X POST http://localhost:8001/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"alice","password":"password"}'
+# {"success":true,"username":"alice","user_id":1}
+```
+
+## Sibling repos (same machine)
+
+Use `host.docker.internal` so containers can reach ports published on the Mac.
+
+**MCP** ([apira-mcp](https://github.com/KMeltzer24/apira-mcp)) — `.env`:
+
+```bash
+USER_SERVICE_URL=http://host.docker.internal:8001
+PORTFOLIO_SERVICE_URL=http://host.docker.internal:8002
+```
+
+```bash
+cd ~/development/apira-mcp && docker compose up -d --build
+```
+
+**RAG** ([apira-rag](https://github.com/KMeltzer24/apira-rag)) — local folder search does not need embeddings. Point `DATABASE_URL` at local Postgres anyway so the process can start; skip ingest unless you want Vector DB.
+
+```bash
+DATABASE_URL=postgresql+psycopg2://apira:apira@host.docker.internal:5432/apira
+GOOGLE_API_KEY=<gemini-key>   # only required for searchVectorDB / ingest
+```
+
+```bash
+cd ~/development/apira-rag && docker compose up -d --build
+```
+
+On the Recommender tab, choose **Local folder** (`searchLocalFolder`). **Vector DB** needs a later `ingest_research.py` into this Postgres (pgvector image is already used).
+
+**Agent** ([apira-agent](https://github.com/KMeltzer24/apira-agent)) — `.env`:
+
+```bash
+MCP_URL=http://host.docker.internal:8000/mcp
+RAG_MCP_URL=http://host.docker.internal:8200/mcp
+GOOGLE_API_KEY=<gemini-key>
+```
+
+```bash
+cd ~/development/apira-agent && docker compose up -d --build
+```
+
+promptfoo (and curl) use:
+
+```text
+http://localhost:8100/chat
+```
+
+**Frontend** ([apira-frontend](https://github.com/KMeltzer24/apira-frontend)) — `.env` then rebuild (Vite bakes `VITE_*` at build time):
+
+```bash
+VITE_USER_SERVICE_URL=http://localhost:8001
+VITE_PORTFOLIO_SERVICE_URL=http://localhost:8002
+VITE_AGENT_URL=http://localhost:8100
+VITE_LOG_SERVICE_URL=http://localhost:8300
+```
+
+```bash
+cd ~/development/apira-frontend && docker compose up -d --build
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Grafana
+
+1. Grafana Cloud → **Explore** → Loki.
+2. Filter `environment="development"` (local compose sets that).
+3. Search `{service="apira-agent"}` or a `request_id` from the browser console.
+
+If Loki credentials are missing, Alloy/log-service still run; cloud push is skipped (log-service warns). Browser logs remain in the `log-service` volume.
+
+## Stock Recommender
+
+Use **Local folder**. Vector search is optional and needs ingest after RDS was deleted.
+
+## Stop
+
+```bash
+docker compose -f docker-compose.local.yml down
+# add -v to wipe Postgres seed/data
+```
+
+Stop MCP, RAG, agent, and frontend the same way in each repo (`docker compose down`).

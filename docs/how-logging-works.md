@@ -2,7 +2,7 @@
 
 Narrative of **structured logging** across Apira: JSON events, `X-Request-ID`
 correlation, redaction, Grafana shipping, and following one user action from
-browser to RDS.
+browser to PostgreSQL.
 
 This doc is the **story**; the field-level rules live in [logging.md](logging.md)
 (the contract). Keep them separate so demos and implementers can skim the

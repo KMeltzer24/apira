@@ -2,7 +2,9 @@
 
 A dummy enterprise microservices system built for learning purposes.
 
-Two FastAPI backend services on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
+Two FastAPI backend services, backed by **PostgreSQL** (local Docker or historically AWS RDS).
+
+**Local (no AWS):** [docs/run-locally.md](docs/run-locally.md) — Postgres seed, backends, log-service, Alloy → Grafana Cloud Loki. MCP, RAG, agent, and frontend run in their own repos against `localhost`.
 
 **Stack:** Python, FastAPI, PostgreSQL (RDS), Postman.
 
@@ -12,7 +14,7 @@ Two FastAPI backend services on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
 
 **RAG service (separate repo):** [apira-rag](https://github.com/KMeltzer24/apira-rag)
 
-**Agent (separate repo):** [apira-agent](https://github.com/KMeltzer24/apira-agent)
+**Agent (separate repo):** [apira-agent](https://github.com/KMeltzer24/apira-agent) — LangGraph supervisor + portfolio/research specialists (port `8100`)
 
 ## Services
 
@@ -21,7 +23,7 @@ Two FastAPI backend services on **AWS EC2**, backed by **AWS RDS PostgreSQL**.
 | **user-service** | `8001` | `POST /login` — validates credentials against the `users` table |
 | **portfolio-service** | `8002` | `GET /portfolio?user_id=<id>` — returns per-user holdings from the `portfolios` table |
 | **log-service** | `8300` | Browser log ingest → local JSONL + Grafana Cloud Loki |
-| **Grafana Alloy** | — | Ships EC2 Docker stdout → Loki |
+| **Grafana Alloy** | — | Docker stdout → Grafana Cloud Loki (EC2 or local Compose) |
 
 Demo logins (seed data): `alice` / `password`, `bob` / `password`.
 
@@ -39,24 +41,28 @@ apira/
 ├── portfolio-service/
 ├── log-service/
 ├── observability/                 # Grafana Alloy config
+├── sql/local-seed.sql             # alice/bob for local Postgres
+├── docker-compose.local.yml       # Mac: Postgres + backends + Loki shippers
 ├── docker-compose.backend.yml     # EC2 backends
 ├── docker-compose.observability.yml
+├── docs/run-locally.md
 ├── docs/architecture.md
 ├── docs/architecture.png
-├── docs/demo.md                   # demo & verification guide
+├── docs/demo.md
 ├── docs/deploy-ec2.md
 ├── docs/grafana-cloud.md
 ├── docs/how-the-database-works.md
 ├── docs/how-logging-works.md
-├── docs/grafana-cloud.md
-├── docs/logging.md                # logging contract
+├── docs/logging.md
 ├── apira.postman_collection.json
 └── README.md
 ```
 
 ## Architecture
 
-See **[docs/architecture.md](docs/architecture.md)** for the full system diagram (frontend, agent, MCP, backend, RDS, Gemini, Grafana).
+See **[docs/architecture.md](docs/architecture.md)** for the full system diagram (frontend, agent, MCP, backend, Postgres, Gemini, Grafana).
+
+**Run locally (no AWS):** [docs/run-locally.md](docs/run-locally.md).
 
 **Logging:** [docs/how-logging-works.md](docs/how-logging-works.md) · [docs/logging.md](docs/logging.md) · [docs/grafana-cloud.md](docs/grafana-cloud.md).
 

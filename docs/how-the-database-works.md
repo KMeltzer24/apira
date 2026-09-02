@@ -2,13 +2,13 @@
 
 This doc explains how **user-service** and **portfolio-service** talk to the database — what library they use, how the connection is configured, and what happens on each API request.
 
-**Short answer:** both services use **SQLAlchemy 2.x** (current, not outdated) to connect to **PostgreSQL on AWS RDS**. They do **not** use Microsoft SQL Server.
+**Short answer:** both services use **SQLAlchemy 2.x** to connect to **PostgreSQL**. Locally that is Docker Compose (`docs/run-locally.md`). Historically it was **AWS RDS**. They do **not** use Microsoft SQL Server.
 
 ---
 
 ## PostgreSQL, not SQL Server
 
-Apira stores data in **AWS RDS PostgreSQL** (port 5432). When people say "SQL server" they sometimes mean any database; in this project that means **PostgreSQL**.
+Apira stores data in **PostgreSQL** (port 5432): **local Docker** (`docker-compose.local.yml`) or **AWS RDS**. When people say "SQL server" they sometimes mean any database; in this project that means **PostgreSQL**.
 
 | Term | What Apira uses |
 |------|-----------------|
@@ -17,7 +17,7 @@ Apira stores data in **AWS RDS PostgreSQL** (port 5432). When people say "SQL se
 | Python driver | **psycopg2** (`psycopg2-binary` in `requirements.txt`) |
 | ORM / query layer | **SQLAlchemy 2.0** |
 
-RDS is in a private VPC. Only EC2 can reach it — not your browser, not the frontend, not the internet directly.
+RDS (when used) is in a private VPC. Only EC2 can reach it — not your browser. Locally, services on your Mac reach Postgres at `localhost:5432`.
 
 ---
 
