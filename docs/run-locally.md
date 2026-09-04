@@ -84,6 +84,17 @@ promptfoo (and curl) use:
 http://localhost:8100/chat
 ```
 
+### Promptfoo evals
+
+With the agent healthy, from the **apira-agent** repo:
+
+```bash
+curl -s http://localhost:8100/health
+REQUEST_TIMEOUT_MS=180000 npx promptfoo@latest eval
+```
+
+Config: [apira-agent/promptfooconfig.yaml](https://github.com/KMeltzer24/apira-agent/blob/main/promptfooconfig.yaml). Scores the full multi-agent `reply` (chat, alice portfolio, local-folder recommender).
+
 **Frontend** ([apira-frontend](https://github.com/KMeltzer24/apira-frontend)) — `.env` then rebuild (Vite bakes `VITE_*` at build time):
 
 ```bash
