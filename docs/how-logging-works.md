@@ -212,5 +212,5 @@ lines. Agent Chat / Recommender use the longer path above.
 
 - [grafana-cloud.md](grafana-cloud.md) — Alloy + log-service + LogQL
 - [logging.md](logging.md) — canonical schema and redaction contract
-- [run-locally.md](run-locally.md) — local stack + mentor checklist
+- [run-locally.md](run-locally.md) — local stack + demo checklist
 - [architecture.md](architecture.md) — system diagram + observability note
