@@ -10,10 +10,10 @@ flowchart LR
     Agent --> RagMCP["apira-rag :8200"]
     BackendMCP --> User["user-service :8001"]
     BackendMCP --> Portfolio["portfolio-service :8002"]
-    User --> RDS["RDS PostgreSQL"]
-    Portfolio --> RDS
+    User --> Postgres["PostgreSQL"]
+    Portfolio --> Postgres
     RagMCP --> Corpus["stock-research/"]
-    RagMCP --> RDS
+    RagMCP --> Postgres
     Agent --> Gemini["Gemini API"]
     RagMCP --> Gemini
     LogService --> Loki["Grafana Cloud Loki"]
@@ -25,15 +25,15 @@ flowchart LR
 | Component | Where it runs |
 |-----------|---------------|
 | **apira-frontend** | Local Mac — Docker at `localhost:3000` |
-| **apira-agent** | AWS EC2 — port `8100` |
-| **apira-mcp** | AWS EC2 — port `8000` |
-| **apira-rag** | AWS EC2 — port `8200` |
-| **user-service** | AWS EC2 — port `8001` |
-| **portfolio-service** | AWS EC2 — port `8002` |
-| **log-service** | AWS EC2 — port `8300` (frontend → Loki) |
-| **Grafana Alloy** | AWS EC2 — ships Docker logs to Loki |
+| **apira-agent** | Local Mac — Docker at `localhost:8100` |
+| **apira-mcp** | Local Mac — Docker at `localhost:8000` |
+| **apira-rag** | Local Mac — Docker at `localhost:8200` |
+| **user-service** | Local Mac — Docker at `localhost:8001` |
+| **portfolio-service** | Local Mac — Docker at `localhost:8002` |
+| **log-service** | Local Mac — Docker at `localhost:8300` (frontend → Loki) |
+| **Grafana Alloy** | Local Mac — ships Docker logs to Loki |
 | **Grafana Cloud Loki** | Grafana Cloud Free (hosted) |
-| **RDS PostgreSQL** | AWS — private VPC, EC2 only |
+| **PostgreSQL** | Local Docker (`docker-compose.local.yml`, pgvector) |
 | **Google Gemini** | External API |
 
 ## Frontend paths
@@ -44,7 +44,7 @@ flowchart LR
 
 **Portfolio tab** (dashed arrows) — frontend calls backend APIs directly (`POST /login`, then `GET /portfolio?user_id=`). No agent, MCP, or Gemini involved. All tabs share no session state.
 
-**Local (no EC2):** [run-locally.md](run-locally.md) — Postgres and backends on the Mac; Grafana Cloud Loki still works via log-service + Alloy. Vector DB search needs a local ingest; the Recommender **local folder** option does not.
+**Local stack:** [run-locally.md](run-locally.md) — Postgres and backends on the Mac; Grafana Cloud Loki still works via log-service + Alloy. Vector DB search needs a local ingest; the Recommender **local folder** option does not.
 
 ## Observability foundation
 
@@ -69,10 +69,10 @@ the [logging contract](logging.md), and [how logging works](how-logging-works.md
 | apira-agent | [how-the-agent-works.md](https://github.com/KMeltzer24/apira-agent/blob/main/docs/how-the-agent-works.md) |
 | apira-mcp | [how-mcp-works.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/how-mcp-works.md) |
 | apira-rag | [README.md](https://github.com/KMeltzer24/apira-rag) |
-| apira (backend) | [deploy-ec2.md](deploy-ec2.md) |
+| apira (backend) | [run-locally.md](run-locally.md) |
 | Database layer | [how-the-database-works.md](how-the-database-works.md) |
 | How logging works | [how-logging-works.md](how-logging-works.md) |
 | Grafana Cloud logs | [grafana-cloud.md](grafana-cloud.md) |
 | Logging contract | [logging.md](logging.md) |
 | Stock Recommender | [apira-rag: how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) |
-| pgvector / RDS setup | [apira-rag: setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/setup-pgvector-rds.md) |
+| Vector search params | [apira-rag: vector-search-params.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/vector-search-params.md) |

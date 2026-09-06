@@ -19,7 +19,7 @@ For agent requests, the ID flows:
 
 ```text
 frontend → apira-agent → apira-mcp → user/portfolio service
-                       └→ apira-rag → Gemini/RDS
+                       └→ apira-rag → Gemini / Postgres
 ```
 
 ## Required fields
@@ -80,10 +80,10 @@ diagnostic RAG events may include only a short normalized preview.
 
 Central collection uses **Grafana Cloud Loki**:
 
-- Container stdout → Grafana Alloy on EC2 → Loki
+- Container stdout → Grafana Alloy → Loki
 - Browser events → `log-service` (`:8300`) → local JSONL + Loki
 
-See [grafana-cloud.md](grafana-cloud.md) for credentials, deploy, and LogQL.
+See [grafana-cloud.md](grafana-cloud.md) for credentials and LogQL.
 
 ## Configuration
 
@@ -103,7 +103,7 @@ Frontend (Vite):
 ```bash
 VITE_LOG_LEVEL=INFO
 VITE_ENVIRONMENT=development
-VITE_LOG_SERVICE_URL=http://<EC2_IP>:8300
+VITE_LOG_SERVICE_URL=http://localhost:8300
 ```
 
 ## Viewing logs

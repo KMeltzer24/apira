@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Apira",
-    "description": "Enterprise microservices system. User Service (8001) and Portfolio Service (8002). Data stored in PostgreSQL on AWS RDS. Default URLs point at the EC2 deployment; switch collection variables to localhost for local dev.",
+    "description": "Enterprise microservices system. User Service (8001) and Portfolio Service (8002). Data stored in local Docker PostgreSQL. Default URLs are localhost.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -54,8 +54,8 @@
     }
   ],
   "variable": [
-    { "key": "userServiceUrl", "value": "http://18.188.213.146:8001" },
-    { "key": "portfolioServiceUrl", "value": "http://18.188.213.146:8002" },
+    { "key": "userServiceUrl", "value": "http://localhost:8001" },
+    { "key": "portfolioServiceUrl", "value": "http://localhost:8002" },
     { "key": "userId", "value": "1" }
   ]
 }

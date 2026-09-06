@@ -2,22 +2,22 @@
 
 This doc explains how **user-service** and **portfolio-service** talk to the database — what library they use, how the connection is configured, and what happens on each API request.
 
-**Short answer:** both services use **SQLAlchemy 2.x** to connect to **PostgreSQL**. Locally that is Docker Compose (`docs/run-locally.md`). Historically it was **AWS RDS**. They do **not** use Microsoft SQL Server.
+**Short answer:** both services use **SQLAlchemy 2.x** to connect to **PostgreSQL** via local Docker Compose (`docs/run-locally.md`). They do **not** use Microsoft SQL Server.
 
 ---
 
 ## PostgreSQL, not SQL Server
 
-Apira stores data in **PostgreSQL** (port 5432): **local Docker** (`docker-compose.local.yml`) or **AWS RDS**. When people say "SQL server" they sometimes mean any database; in this project that means **PostgreSQL**.
+Apira stores data in **PostgreSQL** (port 5432) on your Mac (`docker-compose.local.yml`). When people say "SQL server" they sometimes mean any database; in this project that means **PostgreSQL**.
 
 | Term | What Apira uses |
 |------|-----------------|
-| Database engine | **PostgreSQL** (RDS) |
+| Database engine | **PostgreSQL** (pgvector image locally) |
 | Wire protocol / port | PostgreSQL on **5432** |
 | Python driver | **psycopg2** (`psycopg2-binary` in `requirements.txt`) |
 | ORM / query layer | **SQLAlchemy 2.0** |
 
-RDS (when used) is in a private VPC. Only EC2 can reach it — not your browser. Locally, services on your Mac reach Postgres at `localhost:5432`.
+Services reach Postgres at `localhost:5432` from the Mac, or `host.docker.internal:5432` / the Compose service name from containers.
 
 ---
 
@@ -41,10 +41,10 @@ psycopg2-binary==2.9.10
 SQLAlchemy talks to PostgreSQL through the **psycopg2** driver. The connection string uses SQLAlchemy's URL format:
 
 ```
-postgresql+psycopg2://<user>:<password>@<rds-host>:5432/<dbname>
+postgresql+psycopg2://apira:apira@postgres:5432/apira
 ```
 
-That value is set once on EC2 as the **`DATABASE_URL`** environment variable (see `docker-compose.backend.yml`). Both containers receive the same URL.
+That value is set as **`DATABASE_URL`** in `docker-compose.local.yml`. Both backend containers receive the same URL.
 
 ---
 
@@ -87,8 +87,8 @@ What each piece does:
 
 | Piece | Purpose |
 |-------|---------|
-| `create_engine(DATABASE_URL)` | Opens a connection pool to RDS |
-| `pool_pre_ping=True` | Checks connections before use (helps after RDS idle timeouts) |
+| `create_engine(DATABASE_URL)` | Opens a connection pool to Postgres |
+| `pool_pre_ping=True` | Checks connections before use |
 | `sessionmaker` | Factory that creates one **Session** per request |
 | `get_db()` | FastAPI dependency — yields a session, then closes it |
 
@@ -122,7 +122,7 @@ class Portfolio(Base):
     shares: Mapped[int]
 ```
 
-The app does **not** run migrations or `CREATE TABLE` on startup. Tables and seed data (`alice`, `bob`, holdings) were created manually in RDS (via pgAdmin over an SSH tunnel). See [deploy-ec2.md](deploy-ec2.md).
+The app does **not** run migrations or `CREATE TABLE` on startup. Local Compose applies `sql/local-seed.sql` on **first** Postgres volume create (tables + `alice` / `bob`). See [run-locally.md](run-locally.md).
 
 ---
 
@@ -139,7 +139,7 @@ FastAPI (main.py)
   ▼
 db.execute(select(User).where(User.username == ...))
   ▼
-PostgreSQL (RDS) — SELECT from users
+PostgreSQL — SELECT from users
   ▼
 Return { success, username, user_id } or 401
   ▼
@@ -157,7 +157,7 @@ FastAPI (main.py)
   ▼
 db.execute(select(Portfolio).where(Portfolio.user_id == ...))
   ▼
-PostgreSQL (RDS) — SELECT from portfolios
+PostgreSQL — SELECT from portfolios
   ▼
 Return { holdings: [...] }
   ▼
@@ -174,27 +174,27 @@ Neither service writes to the database in normal operation — login only **read
 Browser / MCP / Agent
   │
   ▼
-user-service or portfolio-service (EC2 Docker, ports 8001 / 8002)
+user-service or portfolio-service (Docker, ports 8001 / 8002)
   │  SQLAlchemy Session + psycopg2
   ▼
-AWS RDS PostgreSQL (private VPC, port 5432)
+PostgreSQL (local Compose, port 5432)
 ```
 
-MCP and the agent **never** connect to RDS directly for user/portfolio data — they call the FastAPI HTTP APIs. **Exception (Phase II):** apira-mcp also connects to RDS for the `research_chunks` pgvector table used by `searchVectorDB`. See [apira-mcp: setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/setup-pgvector-rds.md).
+MCP and the agent **never** connect to Postgres directly for user/portfolio data — they call the FastAPI HTTP APIs. **Exception:** [apira-rag](https://github.com/KMeltzer24/apira-rag) connects to the same Postgres for the `research_chunks` pgvector table used by `searchVectorDB`.
 
 ---
 
-## pgvector table (Phase II — apira-mcp only)
+## pgvector table (apira-rag)
 
-Stock research embeddings live in the **same RDS database**, but are written/read by **apira-mcp** (not user-service or portfolio-service):
+Stock research embeddings live in the **same Postgres database**, written/read by **apira-rag** (not user-service or portfolio-service):
 
 | Table | Used by | Purpose |
 |-------|---------|---------|
 | `users` | user-service | Login |
 | `portfolios` | portfolio-service | Holdings |
-| `research_chunks` | apira-mcp | RAG embeddings (`vector(768)`) |
+| `research_chunks` | apira-rag | RAG embeddings (`vector(768)`) |
 
-Setup SQL: [apira-mcp/sql/setup_pgvector.sql](https://github.com/KMeltzer24/apira-mcp/blob/main/sql/setup_pgvector.sql).
+Schema is applied by apira-rag (`rag/schema.py` / ingest scripts). Local folder search does not need embeddings.
 
 ---
 
@@ -202,10 +202,8 @@ Setup SQL: [apira-mcp/sql/setup_pgvector.sql](https://github.com/KMeltzer24/apir
 
 | Setting | Where | Example |
 |---------|-------|---------|
-| `DATABASE_URL` | EC2 `~/apira/.env` or shell env | `postgresql+psycopg2://apira:****@mydb.xxxx.rds.amazonaws.com:5432/apira` |
-| Passed to containers | `docker-compose.backend.yml` | `environment: - DATABASE_URL=${DATABASE_URL}` |
-| RDS security group | AWS console | Allow **5432** from EC2 security group |
-| MCP `DATABASE_URL` (Phase II) | EC2 `~/apira-mcp/.env` | Same RDS URL as backend |
+| `DATABASE_URL` | `docker-compose.local.yml` | `postgresql+psycopg2://apira:apira@postgres:5432/apira` |
+| RAG `DATABASE_URL` | `apira-rag` `.env` | `postgresql+psycopg2://apira:apira@host.docker.internal:5432/apira` |
 
 ---
 
@@ -213,7 +211,7 @@ Setup SQL: [apira-mcp/sql/setup_pgvector.sql](https://github.com/KMeltzer24/apir
 
 | Doc | Content |
 |-----|---------|
-| [deploy-ec2.md](deploy-ec2.md) | RDS setup, seed data, EC2 deploy |
-| [architecture.md](architecture.md) | Full system diagram including RDS |
-| [apira-mcp: setup-pgvector-rds.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/setup-pgvector-rds.md) | pgvector setup for Phase II |
+| [run-locally.md](run-locally.md) | Local Postgres seed + full stack |
+| [architecture.md](architecture.md) | Full system diagram |
+| [apira-rag: vector-search-params.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/vector-search-params.md) | Similarity / HNSW params |
 | [SQLAlchemy 2.0 docs](https://docs.sqlalchemy.org/en/20/) | Official ORM / Core reference |

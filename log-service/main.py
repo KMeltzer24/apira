@@ -1,4 +1,4 @@
-"""Thin log ingest service: browser → EC2 file + Grafana Cloud Loki."""
+"""Thin log ingest service: browser → local file + Grafana Cloud Loki."""
 
 from __future__ import annotations
 

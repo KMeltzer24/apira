@@ -1,4 +1,4 @@
-# Grafana Cloud log shipping for EC2.
+# Grafana Cloud log shipping (local Compose).
 # Requires .env.observability (see .env.observability.example).
 #
 #   docker compose -f docker-compose.observability.yml --env-file .env.observability up -d --build

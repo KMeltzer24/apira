@@ -18,7 +18,7 @@ log-service (:8300) ──► local file /var/log/apira/frontend.jsonl
   │
   └──────────────────► Grafana Cloud Loki
 
-Docker containers (EC2 or local Compose)
+Docker containers (local Compose)
   │  stdout JSON (user, portfolio, mcp, rag, agent, log-service)
   ▼
 Grafana Alloy ──────────────────► Grafana Cloud Loki
@@ -26,7 +26,7 @@ Grafana Alloy ──────────────────► Grafana 
 You ──► Grafana Explore (LogQL) by request_id / user_id / service
 ```
 
-Credentials stay in `.env.observability` (EC2 or your Mac). The browser never receives the Loki API key.
+Credentials stay in `.env.observability` on your Mac. The browser never receives the Loki API key.
 
 | Piece | Role |
 |-------|------|
@@ -34,7 +34,7 @@ Credentials stay in `.env.observability` (EC2 or your Mac). The browser never re
 | `Grafana Alloy` | Tails Docker container logs and pushes to Loki |
 | Grafana Cloud | Query UI (Explore) + retention |
 
-Compose file: [`docker-compose.observability.yml`](../docker-compose.observability.yml)  
+Compose file: [`docker-compose.observability.yml`](../docker-compose.observability.yml) (also included via [`docker-compose.local.yml`](../docker-compose.local.yml))  
 Alloy config: [`observability/config.alloy`](../observability/config.alloy)
 
 ## One-time Grafana Cloud setup
@@ -48,55 +48,18 @@ Alloy config: [`observability/config.alloy`](../observability/config.alloy)
      `logs:read` for Explore in the same stack)
 4. Create `.env.observability` from
    [`.env.observability.example`](../.env.observability.example)
-   (on EC2 at `~/apira/`, or in this repo on your Mac).
+   in this repo on your Mac.
 
-## Local Mac
+## Run locally
 
-See **[run-locally.md](run-locally.md)**. Same Loki credentials, `docker-compose.local.yml`.
-
-## Deploy on EC2
-
-Security group: allow inbound **TCP 8300** from your laptop (frontend on Mac
-POSTs to log-service). Alloy does not need a public port.
-
-```bash
-# From Mac — include observability files in the deploy tarball
-cd ~/development/apira
-tar czf /tmp/apira-deploy.tgz \
-  user-service portfolio-service log-service observability \
-  docker-compose.backend.yml docker-compose.observability.yml \
-  .env.observability.example
-
-scp -i my-ec2-key.pem /tmp/apira-deploy.tgz ec2-user@<EC2_IP>:/tmp/
-```
-
-On EC2:
-
-```bash
-cd ~
-mkdir -p apira && tar xzf /tmp/apira-deploy.tgz -C apira
-cd ~/apira
-cp .env.observability.example .env.observability
-# edit .env.observability with real GRAFANA_LOKI_* values
-
-sudo docker compose -f docker-compose.observability.yml \
-  --env-file .env.observability up -d --build
-```
-
-Check:
-
-```bash
-curl -s http://127.0.0.1:8300/health
-sudo docker compose -f docker-compose.observability.yml \
-  --env-file .env.observability logs --since=5m
-```
+See **[run-locally.md](run-locally.md)**. Same Loki credentials with `docker-compose.local.yml`.
 
 ## Frontend wiring
 
 In `apira-frontend` `.env` (Mac):
 
 ```bash
-VITE_LOG_SERVICE_URL=http://<EC2_PUBLIC_IP>:8300
+VITE_LOG_SERVICE_URL=http://localhost:8300
 ```
 
 Rebuild/restart the frontend container so Vite picks up the env var. Browser
@@ -125,30 +88,22 @@ Agent Chat or Recommender call. Frontend lines use `job="apira"` via
 log-service; container lines use `job="docker"` (plus extracted `service`
 labels when the line is JSON).
 
-## Local files on EC2
+## Local log files
 
 - Frontend batches: Docker volume `apira-logs` → `/var/log/apira/frontend.jsonl`
   inside the log-service container.
-- Backend/agent/MCP/RAG: Docker’s `json-file` log driver already stores
-  container stdout under `/var/lib/docker/containers/…` on the host; Alloy
-  reads those and ships them to Grafana.
+- Backend/agent/MCP/RAG: Docker’s `json-file` log driver stores container
+  stdout; Alloy reads those and ships them to Grafana.
 
 Inspect frontend file:
 
 ```bash
-sudo docker compose -f docker-compose.observability.yml \
-  --env-file .env.observability exec log-service \
-  tail -n 20 /var/log/apira/frontend.jsonl
+docker compose -f docker-compose.local.yml --env-file .env.observability \
+  exec log-service tail -n 20 /var/log/apira/frontend.jsonl
 ```
-
-## Memory note
-
-The EC2 instance is small. Alloy (~192 MB limit) and log-service (~128 MB
-limit) are capped in compose. If the host OOMs during image builds, reboot and
-rebuild one compose project at a time; leave observability up once built.
 
 ## Related docs
 
 - [logging.md](logging.md) — event schema / redaction
 - [how-logging-works.md](how-logging-works.md) — narrative + correlation
-- [how-logging-works.md](how-logging-works.md) — correlation narrative + Alice lookbacks
+- [run-locally.md](run-locally.md) — full local stack

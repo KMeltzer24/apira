@@ -38,13 +38,13 @@ Browser (DevTools Console + batched POST)
   │  VITE_LOG_SERVICE_URL → log-service (:8300) → Loki + local JSONL
   ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ EC2 containers — same request_id in every JSON line         │
+│ Local containers — same request_id in every JSON line       │
 │                                                             │
 │  apira-agent (:8100)                                        │
 │       │                                                     │
 │       ├── apira-mcp (:8000)                                 │
-│       │     ├── user-service (:8001) → RDS                  │
-│       │     └── portfolio-service (:8002) → RDS             │
+│       │     ├── user-service (:8001) → Postgres             │
+│       │     └── portfolio-service (:8002) → Postgres        │
 │       │                                                     │
 │       └── apira-rag (:8200)                                 │
 │             ├── stock-research/ (local search)              │
@@ -162,11 +162,11 @@ That keeps the trail useful for demos and debugging without leaking secrets.
 |---------|-----|
 | Grafana Cloud | Explore → Loki — filter by `request_id`, `user_id`, or `service` ([queries](grafana-cloud.md)) |
 | Browser | DevTools → Console (JSON strings) and Network → response header `x-request-id` |
-| Frontend file | `log-service` volume `/var/log/apira/frontend.jsonl` on EC2 |
-| Agent | `cd ~/apira-agent && sudo docker compose logs -f agent` |
-| Backend MCP | `cd ~/apira-mcp && sudo docker compose logs -f mcp-server` |
-| Research MCP | `cd ~/apira-rag && sudo docker compose logs -f rag-server` |
-| Backend APIs | `cd ~/apira && sudo docker compose -f docker-compose.backend.yml logs -f` |
+| Frontend file | `log-service` volume `/var/log/apira/frontend.jsonl` |
+| Agent | `cd ~/apira-agent && docker compose logs -f agent` |
+| Backend MCP | `cd ~/apira-mcp && docker compose logs -f mcp-server` |
+| Research MCP | `cd ~/apira-rag && docker compose logs -f rag-server` |
+| Backend APIs | `cd ~/apira && docker compose -f docker-compose.local.yml logs -f` |
 
 Filter one request in Grafana:
 
@@ -212,5 +212,5 @@ lines. Agent Chat / Recommender use the longer path above.
 
 - [grafana-cloud.md](grafana-cloud.md) — Alloy + log-service + LogQL
 - [logging.md](logging.md) — canonical schema and redaction contract
-- [deploy-ec2.md](deploy-ec2.md) — “Follow a request through logs”
+- [run-locally.md](run-locally.md) — local stack + mentor checklist
 - [architecture.md](architecture.md) — system diagram + observability note

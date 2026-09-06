@@ -1,8 +1,8 @@
-# Run Apira locally (no AWS)
+# Run Apira locally
 
-EC2 and RDS are optional. This is the path for promptfoo and mentor demos on your Mac.
+This is the path for Promptfoo and mentor demos on your Mac.
 
-Grafana Cloud Loki is still used (free tier). It is not AWS. Copy Loki credentials into `.env.observability` the same way as on EC2.
+Grafana Cloud Loki is still used (free tier). It is not AWS. Copy Loki credentials into `.env.observability`.
 
 ## What this repo starts
 
@@ -90,10 +90,24 @@ With the agent healthy, from the **apira-agent** repo:
 
 ```bash
 curl -s http://localhost:8100/health
-REQUEST_TIMEOUT_MS=180000 npx promptfoo@latest eval
+REQUEST_TIMEOUT_MS=180000 promptfoo eval
 ```
 
 Config: [apira-agent/promptfooconfig.yaml](https://github.com/KMeltzer24/apira-agent/blob/main/promptfooconfig.yaml). Scores the full multi-agent `reply` (chat, alice portfolio, local-folder recommender).
+
+Optional HTML report after an eval:
+
+```bash
+promptfoo view
+```
+
+## What to show a mentor
+
+1. **Architecture** — [architecture.md](architecture.md): supervisor → portfolio / research; MCP tools, not every service as an agent.
+2. **UI** — `http://localhost:3000`: Agent Chat, Recommender (**Local folder**), Portfolio (`alice` / `password`).
+3. **Multi-agent** — point at `apira-agent/graph.py` (`START → supervisor → portfolio|research → END`).
+4. **Promptfoo** — from `apira-agent`: `REQUEST_TIMEOUT_MS=180000 promptfoo eval` (expect 3/3 pass) or `promptfoo view`.
+5. **Logs (optional)** — Grafana Explore, `{service="apira-agent"}` or a shared `request_id`.
 
 **Frontend** ([apira-frontend](https://github.com/KMeltzer24/apira-frontend)) — `.env` then rebuild (Vite bakes `VITE_*` at build time):
 
@@ -120,7 +134,7 @@ If Loki credentials are missing, Alloy/log-service still run; cloud push is skip
 
 ## Stock Recommender
 
-Use **Local folder**. Vector search is optional and needs ingest after RDS was deleted.
+Use **Local folder**. Vector search is optional: run `ingest_research.py` in apira-rag against local Postgres (pgvector image).
 
 ## Stop
 

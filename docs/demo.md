@@ -7,13 +7,14 @@ Four things from this week, with code links and captured output.
 3. One `request_id` across Grafana / all services
 4. Clear, consistent log messages
 
-**Host:** EC2 `18.188.213.146`  
+**Host (local):** `localhost`  
 (user `8001`, portfolio `8002`, agent `8100`, mcp `8000`, rag `8200`, log-service `8300`)
+
+Primary path: [run-locally.md](run-locally.md).
 
 Background docs:
 
 - [vector-search-params.md](../../apira-rag/docs/vector-search-params.md)
-- [setup-pgvector-rds.md](../../apira-rag/docs/setup-pgvector-rds.md)
 - [how-logging-works.md](how-logging-works.md) · [logging.md](logging.md)
 - [grafana-cloud.md](grafana-cloud.md)
 
@@ -89,7 +90,7 @@ No re-embedding required to add it.
 | Idempotent `CREATE INDEX` in schema ensure | [rag/schema.py](../../apira-rag/rag/schema.py) (lines 32–40) |
 | SQL migration (same DDL) | [sql/migrate_research_chunks_hnsw.sql](../../apira-rag/sql/migrate_research_chunks_hnsw.sql) |
 | Unit test for the DDL | [tests/test_schema.py](../../apira-rag/tests/test_schema.py) |
-| Docs (opclass, planner note) | [setup-pgvector-rds.md](../../apira-rag/docs/setup-pgvector-rds.md) · [vector-search-params.md](../../apira-rag/docs/vector-search-params.md) |
+| Docs (opclass, planner note) | [vector-search-params.md](../../apira-rag/docs/vector-search-params.md) |
 
 ### Captured output — index exists
 
