@@ -111,7 +111,7 @@ promptfoo view
 
 1. **Architecture** — [architecture.md](architecture.md): supervisor → portfolio / research; MCP tools, not every service as an agent.
 2. **UI** — `http://localhost:3000`: Agent Chat, Recommender (**Local folder**), Portfolio (`alice` / `password`).
-3. **Multi-agent** — point at `apira-agent/graph.py` (`START → supervisor → portfolio|research → END`).
+3. **Multi-agent** — point at `apira-agent/agents/graph.py` (`START → supervisor → portfolio|research → END`).
 4. **Promptfoo** — from `apira-agent`: `REQUEST_TIMEOUT_MS=180000 promptfoo eval` (expect 4/4 pass after ingest) or `promptfoo view`. Demo notes: [apira-agent/docs/promptfoo.md](https://github.com/KMeltzer24/apira-agent/blob/main/docs/promptfoo.md).
 5. **Logs (optional)** — Grafana Explore, `{service="apira-agent"}` or a shared `request_id`.
 
