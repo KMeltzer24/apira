@@ -69,14 +69,20 @@ On the Recommender tab, choose **Local folder** (`searchLocalFolder`). **Vector 
 **Agent** ([apira-agent](https://github.com/KMeltzer24/apira-agent)) — `.env`:
 
 ```bash
+TOOL_MODE=mcp   # or python | skills_prompt | skills_shell — see apira-agent docs/tool-use-scenarios.md
 MCP_URL=http://host.docker.internal:8000/mcp
 RAG_MCP_URL=http://host.docker.internal:8200/mcp
+USER_SERVICE_URL=http://host.docker.internal:8001
+PORTFOLIO_SERVICE_URL=http://host.docker.internal:8002
+STOCK_RESEARCH_DIR=/data/stock-research
 GOOGLE_API_KEY=<gemini-key>
 ```
 
 ```bash
 cd ~/development/apira-agent && docker compose up -d --build
 ```
+
+When switching `TOOL_MODE`, pass it on the compose command (shell exports override `.env`): `TOOL_MODE=python docker compose up -d --force-recreate`. Vector Recommender needs `TOOL_MODE=mcp`.
 
 promptfoo (and curl) use:
 
