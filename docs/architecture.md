@@ -38,9 +38,15 @@ flowchart LR
 
 ## Frontend paths
 
-**Agent Chat** (solid arrows) — user prompt → frontend → agent (LangGraph supervisor + portfolio/research specialists) → Gemini → MCP tools → backend APIs → PostgreSQL. The frontend only sends `POST /chat` and renders the reply. The supervisor is the chat agent; login and backend APIs stay tools, not extra agent processes.
+**Agent Chat** — user prompt → frontend → `POST /chat` on apira-agent. The LangGraph run is sequential, not peer specialists:
 
-**Stock Recommender** — same path as Agent Chat; frontend selects **local folder** (`searchLocalFolder`) or **vector DB** (`searchVectorDB` / pgvector). Both research tools come from apira-rag; login and portfolio tools come from apira-mcp. See [apira-rag: how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md).
+```
+START → supervisor → portfolio → logged_in → research → save_recommendation → logged_in → END
+```
+
+The guest supervisor can only chat or send work to **portfolio** (login + holdings). It has no tools. After portfolio, **logged_in** may route to research, finish, or (rarely) refresh portfolio. Last / previous recommendation is **not** a graph node: only the logged-in supervisor binds `getPreviousRecommendation`. After research, **save_recommendation** upserts one row per user (`PUT /recommendation`); research only searches. Login, holdings, and last-rec storage stay tools/APIs, not extra agent processes. The frontend only renders the reply.
+
+**Stock Recommender** — same graph as Agent Chat; frontend selects **local folder** (`searchLocalFolder`) or **vector DB** (`searchVectorDB` / pgvector). Both research tools come from apira-rag; login, portfolio, and last-recommendation tools come from apira-mcp (`login`, `get_portfolio`, `getPreviousRecommendation`, `saveRecommendation`). See [apira-rag: how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) and [apira-agent: how-the-agent-works.md](https://github.com/KMeltzer24/apira-agent/blob/main/docs/how-the-agent-works.md).
 
 **Portfolio tab** (dashed arrows) — frontend calls backend APIs directly (`POST /login`, then `GET /portfolio?user_id=`). No agent, MCP, or Gemini involved. All tabs share no session state.
 
