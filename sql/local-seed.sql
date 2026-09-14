@@ -32,3 +32,9 @@ INSERT INTO portfolios (user_id, ticker, company, shares) VALUES
     (2, 'META', 'Meta Platforms Inc.', 30),
     (2, 'JPM', 'JPMorgan Chase & Co.', 100),
     (2, 'KO', 'The Coca-Cola Company', 200);
+
+CREATE TABLE IF NOT EXISTS recommendations (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id),
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

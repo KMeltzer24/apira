@@ -19,15 +19,15 @@ docker compose -f docker-compose.local.yml --env-file .env.observability up -d -
 
 | Container | Port | Role |
 |-----------|------|------|
-| postgres | `5432` | `users` / `portfolios` (seeded alice & bob) |
+| postgres | `5432` | `users` / `portfolios` / `recommendations` (seeded alice & bob) |
 | user-service | `8001` | `POST /login` |
-| portfolio-service | `8002` | `GET /portfolio?user_id=` |
+| portfolio-service | `8002` | `GET /portfolio?user_id=`; `GET`/`PUT /recommendation` |
 | log-service | `8300` | Browser logs → file + Grafana Cloud Loki |
 | Grafana Alloy | — | Docker stdout → Loki |
 
 Demo logins: `alice` / `password`, `bob` / `password`.
 
-Seed SQL runs **only on first Postgres volume create**. To re-seed: `docker compose -f docker-compose.local.yml down -v` then `up` again.
+Seed SQL runs **only on first Postgres volume create**. To re-seed: `docker compose -f docker-compose.local.yml down -v` then `up` again. Existing volumes need `sql/recommendations.sql` applied once for last-recommendation storage.
 
 Check:
 

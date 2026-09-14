@@ -1,13 +1,16 @@
 import logging
+from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from db import get_db
 from logging_config import RequestLoggingMiddleware, configure_logging
-from models import Portfolio
+from models import Portfolio, Recommendation
 
 configure_logging()
 logger = logging.getLogger("apira.portfolio")
@@ -22,6 +25,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(RequestLoggingMiddleware)
+
+
+class RecommendationIn(BaseModel):
+    user_id: int
+    body: str = Field(..., min_length=1)
 
 
 @app.get("/portfolio")
@@ -50,3 +58,45 @@ def portfolio(user_id: int, db: Session = Depends(get_db)):
         },
     )
     return {"holdings": holdings}
+
+
+@app.get("/recommendation")
+def get_recommendation(user_id: int, db: Session = Depends(get_db)):
+    row = db.get(Recommendation, user_id)
+    logger.info(
+        "Recommendation fetched for user_id=%s",
+        user_id,
+        extra={
+            "event": "recommendation_fetched",
+            "user_id": user_id,
+            "found": row is not None,
+        },
+    )
+    if row is None:
+        return {"user_id": user_id, "body": None}
+    return {"user_id": user_id, "body": row.body}
+
+
+@app.put("/recommendation")
+def put_recommendation(payload: RecommendationIn, db: Session = Depends(get_db)):
+    now = datetime.now(timezone.utc)
+    stmt = (
+        pg_insert(Recommendation)
+        .values(user_id=payload.user_id, body=payload.body, created_at=now)
+        .on_conflict_do_update(
+            index_elements=["user_id"],
+            set_={"body": payload.body, "created_at": now},
+        )
+    )
+    db.execute(stmt)
+    db.commit()
+    logger.info(
+        "Recommendation saved for user_id=%s",
+        payload.user_id,
+        extra={
+            "event": "recommendation_saved",
+            "user_id": payload.user_id,
+            "body_length": len(payload.body),
+        },
+    )
+    return {"user_id": payload.user_id, "body": payload.body}
