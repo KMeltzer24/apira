@@ -167,7 +167,7 @@ async def ingest_logs(body: IngestRequest) -> dict[str, Any]:
             len(entries),
             extra={"event": "loki.push.exception", "count": len(entries)},
         )
-        # Local file write already succeeded; return 202 so the UI does not retry forever.
+        # Local write already succeeded; still accept so the UI does not retry forever.
         return {"accepted": len(entries), "cloud": "failed"}
 
     return {"accepted": len(entries), "cloud": "ok"}

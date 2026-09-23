@@ -19,7 +19,7 @@ discovery.relabel "containers" {
     target_label  = "stream"
   }
 
-  // Keep Apira-related containers; drop Alloy itself to avoid noise loops.
+  // Drop Alloy's own logs so shipping them does not create a feedback loop.
   rule {
     source_labels = ["container"]
     regex         = ".*(alloy|observability-alloy).*"
