@@ -44,9 +44,11 @@ flowchart LR
 START → supervisor → portfolio → logged_in → research → save_recommendation → logged_in → END
 ```
 
-The guest supervisor can only chat or send work to **portfolio** (login + holdings). It has no tools. After portfolio, **logged_in** may route to research, finish, or (rarely) refresh portfolio. Last / previous recommendation is **not** a graph node: only the logged-in supervisor binds `getPreviousRecommendation`. After research, **save_recommendation** upserts one row per user (`PUT /recommendation`); research only searches. Login, holdings, and last-rec storage stay tools/APIs, not extra agent processes. The frontend only renders the reply.
+The guest supervisor can only chat or send work to **portfolio** (login + holdings). It is compiled with **no tools**. After portfolio, **logged_in** is the only hop that binds `getPreviousRecommendation` (MCP, python `@tool`, or skills — same name). That is how “GET only after login” is enforced: the guest hop cannot call the tool, and `logged_in` is unreachable until portfolio has run. See [apira-agent: get-previous-recommendation.md](https://github.com/KMeltzer24/apira-agent/blob/main/docs/get-previous-recommendation.md).
 
-**Stock Recommender** — same graph as Agent Chat; frontend selects **local folder** (`searchLocalFolder`) or **vector DB** (`searchVectorDB` / pgvector). Both research tools come from apira-rag; login, portfolio, and last-recommendation tools come from apira-mcp (`login`, `get_portfolio`, `getPreviousRecommendation`, `saveRecommendation`). See [apira-rag: how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) and [apira-agent: how-the-agent-works.md](https://github.com/KMeltzer24/apira-agent/blob/main/docs/how-the-agent-works.md).
+Last rec is stored in this repo’s Postgres (`recommendations`, one row per `user_id`). After research, **save_recommendation** upserts via `PUT /recommendation` (a graph hop, not an LLM tool). Research only searches. Login, holdings, and last-rec storage stay tools/APIs, not extra agent processes. The frontend only renders the reply.
+
+**Stock Recommender** — same graph as Agent Chat; frontend selects **local folder** (`searchLocalFolder`) or **vector DB** (`searchVectorDB` / pgvector). Both research tools come from apira-rag; login, portfolio, and last-recommendation **read** come from apira-mcp (`login`, `get_portfolio`, `getPreviousRecommendation`). MCP also exposes `saveRecommendation`; the agent save hop uses the same PUT API without binding that tool on Gemini. See [apira-rag: how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) and [apira-agent: how-the-agent-works.md](https://github.com/KMeltzer24/apira-agent/blob/main/docs/how-the-agent-works.md).
 
 **Portfolio tab** (dashed arrows) — frontend calls backend APIs directly (`POST /login`, then `GET /portfolio?user_id=`). No agent, MCP, or Gemini involved. All tabs share no session state.
 
@@ -65,14 +67,14 @@ This is the logging foundation for the planned production-incident resolution
 agent. Dashboards, traces, alerts, and automated remediation are later phases.
 
 See [grafana-cloud.md](grafana-cloud.md), [how-logging-works.md](how-logging-works.md),
-the [logging contract](logging.md), and [how logging works](how-logging-works.md).
+and the [logging contract](logging.md).
 
 ## Per-repo docs
 
 | Repo | Doc |
 |------|-----|
 | apira-frontend | [how-the-frontend-works.md](https://github.com/KMeltzer24/apira-frontend/blob/main/docs/how-the-frontend-works.md) |
-| apira-agent | [how-the-agent-works.md](https://github.com/KMeltzer24/apira-agent/blob/main/docs/how-the-agent-works.md) |
+| apira-agent | [how-the-agent-works.md](https://github.com/KMeltzer24/apira-agent/blob/main/docs/how-the-agent-works.md), [get-previous-recommendation.md](https://github.com/KMeltzer24/apira-agent/blob/main/docs/get-previous-recommendation.md) |
 | apira-mcp | [how-mcp-works.md](https://github.com/KMeltzer24/apira-mcp/blob/main/docs/how-mcp-works.md) |
 | apira-rag | [README.md](https://github.com/KMeltzer24/apira-rag) |
 | apira (backend) | [run-locally.md](run-locally.md) |
