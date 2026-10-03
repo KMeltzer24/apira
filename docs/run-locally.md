@@ -78,8 +78,13 @@ STOCK_RESEARCH_DIR=/data/stock-research
 GOOGLE_API_KEY=<gemini-key>
 ```
 
+Gemini keys exist only in **apira-agent** (chat/specialists) and **apira-rag** (embeddings / `searchVectorDB`). Backend, MCP, and frontend `.env` files do not use `GOOGLE_API_KEY`. Compose copies the key in at container create; after you replace it, recreate those services (`--force-recreate`).
+
 ```bash
 cd ~/development/apira-agent && docker compose up -d --build
+# Starts Nacos (:8848) plus three agent containers.
+# Host: supervisor :8100. Portfolio and research register with Nacos
+# and are not published to localhost.
 ```
 
 When switching `TOOL_MODE`, pass it on the compose command (shell exports override `.env`): `TOOL_MODE=python docker compose up -d --force-recreate`. Vector Recommender needs `TOOL_MODE=mcp`.
@@ -109,11 +114,11 @@ promptfoo view
 
 ## Demo checklist
 
-1. **Architecture** — [architecture.md](architecture.md): supervisor → portfolio / research; MCP tools, not every service as an agent.
+1. **Architecture** — [architecture.md](architecture.md): three apira-agent containers; supervisor discovers portfolio/research over A2A. Login/holdings stay MCP tools.
 2. **UI** — `http://localhost:3000`: Agent Chat, Recommender (**Local folder**), Portfolio (`alice` / `password`).
-3. **Multi-agent** — point at `apira-agent/agents/graph.py` (`START → supervisor → portfolio|research → END`).
+3. **Multi-agent** — three Docker services in apira-agent (`supervisor`, `portfolio`, `research`) plus Nacos. Graph: `START → supervisor → portfolio → logged_in → research → save → logged_in`.
 4. **Promptfoo** — from `apira-agent`: `REQUEST_TIMEOUT_MS=180000 promptfoo eval` (expect 4/4 pass after ingest) or `promptfoo view`. Demo notes: [apira-agent/docs/promptfoo.md](https://github.com/KMeltzer24/apira-agent/blob/main/docs/promptfoo.md).
-5. **Logs (optional)** — Grafana Explore, `{service="apira-agent"}` or a shared `request_id`.
+5. **Logs (optional)** — Grafana Explore, `{service=~"apira-supervisor|apira-portfolio|apira-research"}` or a shared `request_id`.
 
 **Frontend** ([apira-frontend](https://github.com/KMeltzer24/apira-frontend)) — `.env` then rebuild (Vite bakes `VITE_*` at build time):
 
@@ -134,7 +139,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 1. Grafana Cloud → **Explore** → Loki.
 2. Filter `environment="development"` (local compose sets that).
-3. Search `{service="apira-agent"}` or a `request_id` from the browser console.
+3. Search `{service=~"apira-supervisor|apira-portfolio|apira-research"}` or a `request_id` from the browser console.
 
 If Loki credentials are missing, Alloy/log-service still run; cloud push is skipped (log-service warns). Browser logs remain in the `log-service` volume.
 

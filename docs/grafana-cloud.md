@@ -80,10 +80,10 @@ events still print to DevTools; they are also batched to log-service.
 ```
 
 ```logql
-{service="apira-agent"} | json | event = "chat.started"
+{service=~"apira-supervisor|apira-portfolio|apira-research|apira-agent"} | json | event = "chat.started"
 ```
 
-Same `request_id` should appear for agent → mcp/rag → user/portfolio on one
+Same `request_id` should appear for supervisor → portfolio/research → mcp/rag → user/portfolio on one
 Agent Chat or Recommender call. Frontend lines use `job="apira"` via
 log-service; container lines use `job="docker"` (plus extracted `service`
 labels when the line is JSON).

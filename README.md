@@ -14,7 +14,7 @@ Two FastAPI backend services, backed by **PostgreSQL** (local Docker).
 
 **RAG service (separate repo):** [apira-rag](https://github.com/KMeltzer24/apira-rag)
 
-**Agent (separate repo):** [apira-agent](https://github.com/KMeltzer24/apira-agent) — LangGraph supervisor + portfolio/research specialists (port `8100`)
+**Agent (separate repo):** [apira-agent](https://github.com/KMeltzer24/apira-agent) — LangGraph supervisor (`8100`) plus A2A portfolio (`8110`) and research (`8120`) specialists, with Nacos (`8848`)
 
 ## Services
 

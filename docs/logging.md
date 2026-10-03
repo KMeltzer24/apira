@@ -18,8 +18,8 @@ Every HTTP request uses the `X-Request-ID` header:
 For agent requests, the ID flows:
 
 ```text
-frontend → apira-agent → apira-mcp → user/portfolio service
-                       └→ apira-rag → Gemini / Postgres
+frontend → supervisor → portfolio (A2A) → apira-mcp → user/portfolio service
+                      └→ research (A2A) → apira-rag → Gemini / Postgres
 ```
 
 ## Required fields

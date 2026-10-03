@@ -16,7 +16,7 @@ schema without reading the full walkthrough.
 | Repo | What it logs |
 |------|----------------|
 | [apira](https://github.com/KMeltzer24/apira) (this repo) | `user-service`, `portfolio-service` HTTP + login/portfolio events |
-| [apira-agent](https://github.com/KMeltzer24/apira-agent) | `/chat` HTTP, agent build/run, MCP tool calls |
+| [apira-agent](https://github.com/KMeltzer24/apira-agent) | `/chat` on supervisor, A2A specialist runs, MCP tool calls |
 | [apira-mcp](https://github.com/KMeltzer24/apira-mcp) | MCP tool lifecycle + upstream backend calls |
 | [apira-rag](https://github.com/KMeltzer24/apira-rag) | Research tools, search, ingest, embed, PDF extract |
 | [apira-frontend](https://github.com/KMeltzer24/apira-frontend) | Browser console JSON + `X-Request-ID` on every API call |
@@ -40,13 +40,11 @@ Browser (DevTools Console + batched POST)
 ┌─────────────────────────────────────────────────────────────┐
 │ Local containers — same request_id in every JSON line       │
 │                                                             │
-│  apira-agent (:8100)                                        │
-│       │                                                     │
-│       ├── apira-mcp (:8000)                                 │
+│  supervisor (:8100) → Nacos (:8848)                         │
+│       ├── portfolio A2A (Docker net) → apira-mcp (:8000)    │
 │       │     ├── user-service (:8001) → Postgres             │
 │       │     └── portfolio-service (:8002) → Postgres        │
-│       │                                                     │
-│       └── apira-rag (:8200)                                 │
+│       └── research A2A (Docker net) → apira-rag (:8200)     │
 │             ├── stock-research/ (local search)              │
 │             └── research_chunks / Gemini embeddings         │
 │                                                             │
@@ -163,7 +161,7 @@ That keeps the trail useful for demos and debugging without leaking secrets.
 | Grafana Cloud | Explore → Loki — filter by `request_id`, `user_id`, or `service` ([queries](grafana-cloud.md)) |
 | Browser | DevTools → Console (JSON strings) and Network → response header `x-request-id` |
 | Frontend file | `log-service` volume `/var/log/apira/frontend.jsonl` |
-| Agent | `cd ~/apira-agent && docker compose logs -f agent` |
+| Agent | `cd ~/apira-agent && docker compose logs -f supervisor portfolio research` |
 | Backend MCP | `cd ~/apira-mcp && docker compose logs -f mcp-server` |
 | Research MCP | `cd ~/apira-rag && docker compose logs -f rag-server` |
 | Backend APIs | `cd ~/apira && docker compose -f docker-compose.local.yml logs -f` |
