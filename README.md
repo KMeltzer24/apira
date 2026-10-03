@@ -1,20 +1,19 @@
 # Apira
 
-A dummy enterprise microservices system built for learning purposes.
+Local multi-service portfolio assistant. A user logs in, reads holdings, and asks a multi-agent system for stock research.
 
-Two FastAPI backend services, backed by **PostgreSQL** (local Docker).
+This repository is the backend: two FastAPI services and PostgreSQL in Docker, plus log ingest to Grafana Cloud. The UI, agent, MCP tools, and research corpus are separate repos and call these APIs on `localhost`.
 
-**Local runbook:** [docs/run-locally.md](docs/run-locally.md) — Postgres seed, backends, log-service, Alloy → Grafana Cloud Loki. MCP, RAG, agent, and frontend run in their own repos against `localhost`.
+**Stack:** Python, FastAPI, PostgreSQL, Docker, Grafana Cloud Loki.
 
-**Stack:** Python, FastAPI, PostgreSQL (local Docker), LangGraph, Promptfoo, Postman.
+**Run locally:** [docs/run-locally.md](docs/run-locally.md) — Postgres seed, backends, log-service, Alloy → Loki.
 
-**Frontend (separate repo):** [apira-frontend](https://github.com/KMeltzer24/apira-frontend)
-
-**MCP server (separate repo):** [apira-mcp](https://github.com/KMeltzer24/apira-mcp)
-
-**RAG service (separate repo):** [apira-rag](https://github.com/KMeltzer24/apira-rag)
-
-**Agent (separate repo):** [apira-agent](https://github.com/KMeltzer24/apira-agent) — LangGraph supervisor (`8100`) plus A2A portfolio (`8110`) and research (`8120`) specialists, with Nacos (`8848`)
+| Repo | Role |
+|------|------|
+| [apira-frontend](https://github.com/KMeltzer24/apira-frontend) | React UI (portfolio, agent chat, recommender) |
+| [apira-agent](https://github.com/KMeltzer24/apira-agent) | LangGraph supervisor (`8100`) plus A2A portfolio and research specialists, Nacos (`8848`) |
+| [apira-mcp](https://github.com/KMeltzer24/apira-mcp) | Login, holdings, and last-recommendation tools |
+| [apira-rag](https://github.com/KMeltzer24/apira-rag) | Research corpus, pgvector search, Gemini embeddings |
 
 ## Services
 
@@ -42,8 +41,6 @@ apira/
 ├── docker-compose.observability.yml
 ├── docs/run-locally.md
 ├── docs/architecture.md
-├── docs/architecture.png
-├── docs/demo.md
 ├── docs/grafana-cloud.md
 ├── docs/how-the-database-works.md
 ├── docs/how-logging-works.md
@@ -60,7 +57,7 @@ See **[docs/architecture.md](docs/architecture.md)** for the full system diagram
 
 **Logging:** [docs/how-logging-works.md](docs/how-logging-works.md) · [docs/logging.md](docs/logging.md) · [docs/grafana-cloud.md](docs/grafana-cloud.md).
 
-**Demo & verification:** [docs/demo.md](docs/demo.md) — how to show vector search, the HNSW index, shared-`request_id` logs, and log-message quality working.
+**Demo checklist:** [docs/run-locally.md](docs/run-locally.md) — UI, multi-agent graph, Promptfoo, and a shared `request_id` in Grafana.
 
 **Stock Recommender:** [apira-rag/docs/how-stock-recommender-works.md](https://github.com/KMeltzer24/apira-rag/blob/main/docs/how-stock-recommender-works.md) — local folder + pgvector search.
 
