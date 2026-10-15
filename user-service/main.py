@@ -1,5 +1,6 @@
 import logging
 
+import bcrypt
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -30,13 +31,25 @@ class LoginRequest(BaseModel):
     password: str
 
 
+def _password_matches(stored: str, given: str) -> bool:
+    try:
+        return bcrypt.checkpw(given.encode("utf-8"), stored.encode("utf-8"))
+    except ValueError:
+        return False
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.post("/login")
 def login(body: LoginRequest, db: Session = Depends(get_db)):
     user = db.execute(
         select(User).where(User.username == body.username)
     ).scalar_one_or_none()
 
-    if user is None or user.password != body.password:
+    if user is None or not _password_matches(user.password, body.password):
         logger.warning(
             "Login failed (invalid credentials)",
             extra={"event": "login_failed", "error_code": "invalid_credentials"},

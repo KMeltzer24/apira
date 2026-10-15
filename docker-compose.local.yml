@@ -1,7 +1,7 @@
-# Local Mac stack: Postgres + backends + browser log ingest + Alloy → Grafana Cloud Loki.
-# See docs/run-locally.md
+# Postgres + backends + log ingest + Alloy → Grafana Cloud Loki.
+# See README.md
 #
-#   cp .env.observability.example .env.observability   # add Grafana Cloud Loki creds
+#   cp .env.observability.example .env.observability
 #   docker compose -f docker-compose.local.yml --env-file .env.observability up -d --build
 
 services:
@@ -36,6 +36,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
     restart: unless-stopped
 
   portfolio-service:
@@ -51,6 +57,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
     restart: unless-stopped
 
   log-service:

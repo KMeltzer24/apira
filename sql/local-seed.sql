@@ -1,5 +1,6 @@
 -- First-boot seed for local Docker Postgres (docker-entrypoint-initdb.d).
--- Demo logins: alice / password, bob / password.
+-- Demo logins (bcrypt): alice / password, bob / password.
+-- Re-create the volume after changing this file: docker compose -f docker-compose.local.yml down -v
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -16,8 +17,8 @@ CREATE TABLE IF NOT EXISTS portfolios (
 );
 
 INSERT INTO users (id, username, password) VALUES
-    (1, 'alice', 'password'),
-    (2, 'bob', 'password')
+    (1, 'alice', '$2b$12$1Wae9KqBggLlzYE1tEr5oO4Y7jtlekYGbhbdJ9d/GcYisJenp8dnC'),
+    (2, 'bob', '$2b$12$1Wae9KqBggLlzYE1tEr5oO4Y7jtlekYGbhbdJ9d/GcYisJenp8dnC')
 ON CONFLICT (username) DO NOTHING;
 
 SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));

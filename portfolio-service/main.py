@@ -32,6 +32,11 @@ class RecommendationIn(BaseModel):
     body: str = Field(..., min_length=1)
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.get("/portfolio")
 def portfolio(user_id: int, db: Session = Depends(get_db)):
     rows = db.execute(
