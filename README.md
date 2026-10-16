@@ -7,7 +7,7 @@
 [![Gemini](https://img.shields.io/badge/Gemini-chat_+_embeddings-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
-**Multi-agent portfolio assistant** on one machine: login and holdings over REST, then a **LangGraph** supervisor that delegates to **A2A** specialists. Specialists call **MCP** tools (FastMCP) for login, holdings, last recommendation, local-file search, and **RAG** over **pgvector** with Gemini embeddings.
+**Apira** (**A**I **P**ortfolio **I**ntelligence **R**esearch **A**ssistant) is a local **multi-agent** app: login and holdings over REST, then a **LangGraph** supervisor that delegates to **A2A** specialists. Specialists call **MCP** tools (FastMCP) for login, holdings, last recommendation, local-file search, and **RAG** over **pgvector** with Gemini embeddings.
 
 This repo is the **HTTP backend** (FastAPI, Postgres, log ingest). Sibling repos are the UI, the agent, and the MCP/RAG server. Start here.
 
@@ -45,7 +45,7 @@ START → supervisor → portfolio → logged_in → research → save_recommend
 - **Research specialist** — MCP tools: `searchLocalFolder` (disk) or `searchVectorDB` (pgvector).
 - **save_recommendation** — graph hop, not an LLM tool. `PUT /recommendation` into Postgres.
 
-Specialists load **allowlists** of tools from one MCP server ([apira-rag](https://github.com/KMeltzer24/apira-rag) `:8000`), not the full catalog. The Portfolio tab skips the agent and calls this repo’s REST APIs directly.
+Specialists load **allowlists** of tools from one MCP server ([apira-rag](https://github.com/KMeltzer24/apira-rag) `:8000`), not the full catalog. The same names can run as MCP, in-process Python tools, or skill-markdown codegen (`TOOL_MODE` in [apira-agent](https://github.com/KMeltzer24/apira-agent)). The Portfolio tab skips the agent and calls this repo’s REST APIs directly.
 
 This is a **local demo**: seeded users, no JWT. Do not publish the ports.
 
